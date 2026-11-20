@@ -49,6 +49,40 @@ class PaystackDepositSecurityTest extends TestCase
         $this->assertFalse($gateway->validWebhookSignature($body . ' ', $header, null));
     }
 
+    public function test_legacy_signature_is_verified_when_no_webhook_signing_secret_is_configured(): void
+    {
+        $secretKey = 'sk_test_legacy_secret';
+        config([
+            'services.paystack.secret_key' => $secretKey,
+            'services.paystack.webhook_secret' => null,
+        ]);
+
+        $body = '{"event":"charge.success","data":{"reference":"FB-legacy"}}';
+        $legacySignature = hash_hmac('sha512', $body, $secretKey);
+        $modernHeader = 't=' . time() . ',v1=whk_test:unusable';
+
+        $gateway = new PaystackGateway();
+
+        $this->assertTrue($gateway->validWebhookSignature($body, $modernHeader, $legacySignature));
+        $this->assertFalse($gateway->validWebhookSignature($body . ' ', $modernHeader, $legacySignature));
+    }
+
+    public function test_invalid_modern_signature_does_not_fall_back_to_legacy_signature(): void
+    {
+        config([
+            'services.paystack.secret_key' => 'sk_test_legacy_secret',
+            'services.paystack.webhook_secret' => 'whsec_test_signing_secret',
+        ]);
+
+        $body = '{"event":"charge.success","data":{"reference":"FB-modern"}}';
+        $legacySignature = hash_hmac('sha512', $body, 'sk_test_legacy_secret');
+        $modernHeader = 't=' . time() . ',v1=whk_test:invalid';
+
+        $gateway = new PaystackGateway();
+
+        $this->assertFalse($gateway->validWebhookSignature($body, $modernHeader, $legacySignature));
+    }
+
     public function test_successful_webhook_credits_wallet_once_even_when_retried(): void
     {
         config(['services.paystack.webhook_secret' => 'whsec_test_signing_secret']);

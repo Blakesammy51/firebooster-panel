@@ -1,11 +1,13 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\\Feature;
 
-use App\Models\User;
-use App\Services\PaystackGateway;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use App\\Models\\User;
+use App\\Models\\Wallet;
+use App\\Models\\WalletTransaction;
+use App\\Services\\PaystackGateway;
+use Illuminate\\Foundation\\Testing\\RefreshDatabase;
+use Tests\\TestCase;
 
 class PaystackDepositSecurityTest extends TestCase
 {
@@ -45,5 +47,124 @@ class PaystackDepositSecurityTest extends TestCase
 
         $this->assertTrue($gateway->validWebhookSignature($body, $header, null));
         $this->assertFalse($gateway->validWebhookSignature($body . ' ', $header, null));
+    }
+
+    public function test_successful_webhook_credits_wallet_once_even_when_retried(): void
+    {
+        config(['services.paystack.webhook_secret' => 'whsec_test_signing_secret']);
+
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $wallet = Wallet::query()->create([
+            'user_id' => $user->id,
+            'balance_kobo' => 0,
+            'currency' => 'NGN',
+        ]);
+        $transaction = WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $user->id,
+            'type' => 'deposit',
+            'amount_kobo' => 50000,
+            'currency' => 'NGN',
+            'status' => 'pending',
+            'reference' => 'FB-webhook-success',
+            'description' => 'Wallet deposit via Paystack',
+            'metadata' => ['gateway' => 'paystack'],
+        ]);
+
+        $body = json_encode([
+            'event' => 'charge.success',
+            'data' => [
+                'id' => 123456,
+                'status' => 'success',
+                'reference' => $transaction->reference,
+                'amount' => 50000,
+                'currency' => 'NGN',
+                'metadata' => [
+                    'user_id' => $user->id,
+                    'wallet_transaction_id' => $transaction->id,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR);
+
+        $this->sendSignedWebhook($body)->assertOk();
+        $this->sendSignedWebhook($body)->assertOk();
+
+        $this->assertDatabaseHas('wallets', [
+            'id' => $wallet->id,
+            'balance_kobo' => 50000,
+        ]);
+        $this->assertDatabaseHas('wallet_transactions', [
+            'id' => $transaction->id,
+            'status' => 'completed',
+        ]);
+    }
+
+    public function test_webhook_with_mismatched_amount_does_not_credit_wallet(): void
+    {
+        config(['services.paystack.webhook_secret' => 'whsec_test_signing_secret']);
+
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $wallet = Wallet::query()->create([
+            'user_id' => $user->id,
+            'balance_kobo' => 0,
+            'currency' => 'NGN',
+        ]);
+        $transaction = WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $user->id,
+            'type' => 'deposit',
+            'amount_kobo' => 50000,
+            'currency' => 'NGN',
+            'status' => 'pending',
+            'reference' => 'FB-webhook-wrong-amount',
+            'description' => 'Wallet deposit via Paystack',
+            'metadata' => ['gateway' => 'paystack'],
+        ]);
+
+        $body = json_encode([
+            'event' => 'charge.success',
+            'data' => [
+                'status' => 'success',
+                'reference' => $transaction->reference,
+                'amount' => 100000,
+                'currency' => 'NGN',
+                'metadata' => [
+                    'user_id' => $user->id,
+                    'wallet_transaction_id' => $transaction->id,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR);
+
+        $this->sendSignedWebhook($body)->assertStatus(500);
+
+        $this->assertDatabaseHas('wallets', [
+            'id' => $wallet->id,
+            'balance_kobo' => 0,
+        ]);
+        $this->assertDatabaseHas('wallet_transactions', [
+            'id' => $transaction->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    private function sendSignedWebhook(string $body)
+    {
+        $timestamp = time();
+        $secret = (string) config('services.paystack.webhook_secret');
+        $signature = hash_hmac('sha512', $timestamp . '.' . $body, $secret);
+        $header = 't=' . $timestamp . ',v1=whk_test:' . $signature;
+
+        return $this->call(
+            'POST',
+            route('webhooks.paystack'),
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_PAYSTACK_SIGNATURE' => $header,
+            ],
+            $body
+        );
     }
 }

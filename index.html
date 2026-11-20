@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090a12">
+  <meta name="description" content="Firebooster campaign workspace preview">
+  <title>Firebooster — Campaign workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#"><span class="brand-icon">F</span>fire<span>booster</span></a>
+    <p class="section-label">WORKSPACE</p>
+    <nav>
+      <button class="nav active" data-view="overview">⌂ <span>Overview</span></button>
+      <button class="nav" data-view="campaign">✳ <span>New campaign</span></button>
+      <button class="nav" data-view="services">▦ <span>Services</span></button>
+      <button class="nav" data-view="orders">↗ <span>Campaigns & orders</span></button>
+      <button class="nav" data-view="wallet">◈ <span>Wallet</span></button>
+    </nav>
+    <div class="sidebar-bottom"><div class="help"><b>Need a hand?</b><p>Support tools are coming soon.</p></div><div class="profile"><div class="avatar">FB</div><div><b>Firebooster demo</b><small>Starter workspace</small></div></div></div>
+  </aside>
+  <main>
+    <header class="topbar"><button id="menu" class="menu" aria-label="Toggle menu">☰</button><div class="crumb">Workspace <span>/</span> <b id="page-title">Overview</b></div><div class="top-right"><i></i> Demo environment <span class="avatar mini">FB</span></div></header>
+    <div class="content">
+      <div class="notice" id="notice"><b>✦</b><div><strong>Firebooster preview</strong><p>Sample figures and actions are for demonstration only. Payments and provider connections are not active.</p></div><button id="dismiss" aria-label="Dismiss">×</button></div>
+      <section class="view active" id="overview">
+        <div class="heading"><div><label>YOUR NEXT MOVE STARTS HERE</label><h1>Good to see you<span>.</span></h1><p>Plan, manage and measure your social media campaigns in one place.</p></div><button class="primary" data-go="campaign">＋ Create campaign</button></div>
+        <div class="stats">
+          <article><small>Available balance</small><strong>₦0.00</strong><em>Demo wallet · No funds deposited</em></article>
+          <article><small>Active campaigns</small><strong id="active-count">0</strong><em>Nothing running right now</em></article>
+          <article><small>Total campaigns</small><strong id="total-count">0</strong><em>Your campaign history</em></article>
+          <article><small>Completed</small><strong>0</strong><em>Completed campaigns</em></article>
+        </div>
+        <div class="columns">
+          <article class="panel"><div class="panel-title"><div><h2>Campaign activity</h2><p>Your recent work at a glance</p></div><button class="link" data-go="orders">View all →</button></div><div class="empty"><div class="empty-icon">↗</div><h3>Your activity starts here</h3><p>Once you save a campaign brief, it will appear in your campaign list.</p><button class="outline" data-go="campaign">Create your first campaign</button></div></article>
+          <article class="panel"><h2>Quick start</h2><p class="sub">What would you like to do?</p><button class="quick" data-go="campaign">✳ <span><b>Plan a campaign</b><small>Set a goal and campaign brief</small></span> →</button><button class="quick" data-go="services">▦ <span><b>Explore services</b><small>Browse marketing support</small></span> →</button><button class="quick" data-go="wallet">◈ <span><b>Review wallet</b><small>Payment setup coming soon</small></span> →</button></article>
+        </div>
+      </section>
+      <section class="view" id="campaign"><div class="heading"><div><label>MAKE SOMETHING HAPPEN</label><h1>New campaign<span>.</span></h1><p>Tell us what you're trying to achieve.</p></div></div><article class="panel form-panel"><form id="campaign-form"><label>Campaign name<input name="name" required placeholder="e.g. November product launch"></label><div class="form-row"><label>Platform<select name="platform" required><option value="">Choose a platform</option><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>Facebook</option><option>LinkedIn</option><option>X</option></select></label><label>Campaign goal<select name="goal" required><option value="">Choose your goal</option><option>Brand awareness</option><option>Website traffic</option><option>Content promotion</option><option>Lead generation</option><option>Community growth</option></select></label></div><label>Campaign brief<textarea name="brief" rows="4" placeholder="Describe your audience, content and what success looks like…"></textarea></label><p class="fine">Preview only: campaign briefs are saved in this browser. No orders or payments are submitted.</p><button class="primary">Save campaign brief →</button></form></article></section>
+      <section class="view" id="services"><div class="heading"><div><label>TOOLS FOR YOUR NEXT MOVE</label><h1>Marketing services<span>.</span></h1><p>Practical support for building a real audience.</p></div></div><div class="service-grid"><article class="panel"><label>STRATEGY</label><h2>Campaign planning</h2><p>Turn business goals into a focused social media campaign plan.</p></article><article class="panel"><label>CONTENT</label><h2>Content production</h2><p>Plan creative assets, messaging and a consistent publishing schedule.</p></article><article class="panel"><label>ADVERTISING</label><h2>Paid ads setup</h2><p>Prepare transparent ad campaigns with audience and budget controls.</p></article><article class="panel"><label>ANALYTICS</label><h2>Performance review</h2><p>Understand reach, clicks and conversions using campaign data.</p></article></div></section>
+      <section class="view" id="orders"><div class="heading"><div><label>KEEP TRACK OF THE WORK</label><h1>Campaigns & orders<span>.</span></h1><p>Your saved campaign briefs.</p></div><button class="primary" data-go="campaign">＋ New campaign</button></div><article class="panel table-wrap"><h2>Recent campaigns</h2><div class="table-scroll"><table><thead><tr><th>CAMPAIGN</th><th>PLATFORM</th><th>GOAL</th><th>STATUS</th></tr></thead><tbody id="campaign-rows"><tr><td colspan="4" class="empty-cell">No campaigns yet. Create a campaign brief to see it here.</td></tr></tbody></table></div></article></section>
+      <section class="view" id="wallet"><div class="heading"><div><label>YOUR BILLING SPACE</label><h1>Wallet<span>.</span></h1><p>Balance and transaction tools will appear here.</p></div></div><article class="wallet"><small>DEMO AVAILABLE BALANCE</small><strong>₦0.00</strong><p>No real money is stored in this preview.</p></article><article class="panel payment"><h2>Payments are not connected yet</h2><p>Secure payment integration will be added after the backend and business configuration are ready. Never put payment credentials in frontend code.</p></article></section>
+    </div>
+    <footer>© 2026 Firebooster <span>Built for thoughtful, measurable growth.</span></footer>
+  </main>
+</div><div class="toast" id="toast" role="status"></div><script src="app.js"></script>
+</body></html>

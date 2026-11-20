@@ -52,6 +52,7 @@ Never expose public admin registration or ship a default admin password. Before 
 
 - Customer authentication foundation using Laravel Breeze.
 - Admin-only dashboard with user, service, and order-request counts.
+- Searchable, read-only customer account directory with role and email-verification status.
 - Admin service catalogue: create, edit, publish, and unpublish services.
 - Customer service catalogue showing only active services.
 - Customer order-request form and private order history.

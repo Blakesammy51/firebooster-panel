@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -13,6 +14,7 @@ require __DIR__.'/auth.php';
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
     Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+    Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
 });

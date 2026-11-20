@@ -54,3 +54,22 @@ Keep application configuration environment-based; do not hard-code the temporary
 ## Current feature boundary
 
 The current backend foundation supports authentication integration, admin/customer screens, service catalogue management, and manual order requests. It does not yet implement a wallet, deposits, payment gateway, refunds, provider API, or automatic fulfillment. Order requests are not paid orders.
+
+## Candidate free staging host: EthioDeploy
+
+Reviewed on November 20, 2026 against the provider's published Laravel guide, terms, privacy policy, and pricing documentation.
+
+- Laravel auto-detection supports PHP 8.2–8.5, Composer install, Vite asset builds, nginx/PHP-FPM, HTTPS, and a MySQL or Postgres addon.
+- The Free plan advertises one project, 256 MB RAM, 0.5 CPU, and a 512 MB database addon. The app sleeps after 30 minutes without traffic; the first request may wait up to 30 seconds while it wakes.
+- The provider documents deployment from a selected GitHub repository and supports a repository subfolder as the project root. For Firebooster, the intended root directory is `backend` only after that directory contains the complete Laravel application.
+- The free tier is suitable only for a non-critical staging/demo test. It has no uptime SLA; do not store real customer data, payment details, provider credentials, or rely on it for paid order fulfilment.
+- The provider's privacy policy says it receives the source code, build logs, environment variables, and deployment history for the project. Grant its GitHub App access only to the Firebooster repository, and store secrets only in its private environment-variable settings.
+- Do not enable automatic deployment from the public-facing `main` branch. Keep using the isolated `laravel-integration` branch for the staging experiment, or use a dedicated staging branch once the complete Laravel app is assembled.
+
+Provider links:
+- Laravel deployment guide: https://ethiodeploy.com/deploy/laravel
+- Terms: https://ethiodeploy.com/terms
+- Privacy policy: https://ethiodeploy.com/privacy
+- Pricing and billing: https://ethiodeploy.com/docs/billing
+
+This is a candidate, not an endorsement or a guarantee of reliability. Recheck its terms, free-tier limits, and data-handling practices immediately before connecting the repository. No hosting account has been created and no repository access has been granted.

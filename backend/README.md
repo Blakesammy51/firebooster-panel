@@ -43,19 +43,21 @@ There is no public admin registration and no default admin password. All new use
 - Customer order-request form and private order history.
 - Server-side price calculation; browser-submitted prices are ignored.
 - Admin order queue with manually controlled request statuses.
-- Feature tests for admin access control.
+- Feature tests for admin access control and registration defaults.
+
+## CI verification
+GitHub Actions passed on commit 47f7702ee9ab6201471045c890c1b7ee4506f598. Composer validation/install, frontend asset build, SQLite migrations, and all 5 tests (10 assertions) completed successfully. This is a clean automated baseline, not a full production security audit or deployment.
 
 ## Important limitations
 - Order requests are NOT paid orders. They are stored as pending records for review only.
 - No wallet, deposit, payment gateway, refunds, SMM provider API, or automatic fulfillment exists.
 - Admin status changes do not charge customers or send requests to a provider.
 - Do not accept customer funds until payment verification, wallet ledger, provider adapter, idempotency, reconciliation, and security testing are implemented.
-- Source has not yet been executed in a PHP runtime in this workflow. GitHub Actions will run Composer, Vite, migrations, and tests; deployment must wait for a green run and manual staging review.
 
 ## Deployment
 The intended staging project root is backend. The web document root must be backend/public. Read the deployment preparation checklist before connecting a host. Configure APP_ENV=production, APP_DEBUG=false, APP_URL, APP_KEY, DB_CONNECTION=mysql (or pgsql), and private database URL/credentials in host settings. The database config accepts DB_URL or DATABASE_URL.
 
-Do not deploy from main; keep the staging branch isolated until the app has passed CI and manual review.
+Do not deploy from main; keep the staging branch isolated until manual staging review is complete.
 
 ## Licensing checkpoint
 The proposed third-party starter zuramai/laravel-smm has conflicting MIT metadata and GPL-3.0 license text. No code from that project has been imported. Resolve the license with the copyright holder or qualified counsel before reuse.

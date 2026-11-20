@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,7 @@ Route::prefix('admin')
     ->middleware(['auth', 'verified', 'admin'])
     ->group(function () {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
         Route::post('/services', [AdminServiceController::class, 'store'])->name('services.store');
         Route::put('/services/{service}', [AdminServiceController::class, 'update'])->name('services.update');

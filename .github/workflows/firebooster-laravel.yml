@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - laravel-integration
+      - wallet-foundation
   pull_request:
     branches:
       - main
+      - laravel-integration
   workflow_dispatch:
 
 permissions:

@@ -60,6 +60,10 @@ Never expose public admin registration or ship a default admin password. Before 
 - Admin order queue with manually controlled request statuses.
 - Basic feature tests for admin access control.
 
+## Deployment preparation
+
+See [the deployment preparation checklist](../docs/DEPLOYMENT_PREPARATION.md) before selecting a host. This branch is not a complete deployable Laravel application yet; it contains source files to merge into a fresh Laravel 12 app. Do not deploy this folder as-is.
+
 ## Important limitations
 
 - Order requests are **not paid orders**. They are stored as pending records for review only.

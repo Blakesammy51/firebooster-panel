@@ -19,21 +19,29 @@
                 <button class="rounded-lg border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800">Sign out</button>
             </form>
         </header>
-
-        <section class="grid gap-4 sm:grid-cols-3" aria-label="Account statistics">
-            @foreach ([['Total accounts', $totalUsers], ['Customers', $customerUsers], ['Administrators', $adminUsers]] as [$label, $value])
+        <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Workspace statistics">
+            @foreach ([['Total accounts', $totalUsers], ['Customers', $customerUsers], ['Services', $totalServices], ['Order requests', $totalOrders]] as [$label, $value])
                 <article class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
                     <p class="text-sm text-slate-400">{{ $label }}</p>
                     <p class="mt-3 text-3xl font-bold">{{ number_format($value) }}</p>
                 </article>
             @endforeach
         </section>
-
-        <section class="mt-8 rounded-2xl border border-violet-900/60 bg-violet-950/30 p-6">
-            <h2 class="font-semibold">Foundation status</h2>
+        <section class="mt-8 grid gap-4 sm:grid-cols-2">
+            <a href="{{ route('admin.services.index') }}" class="rounded-xl border border-violet-800 bg-violet-950/30 p-6 hover:bg-violet-950/60">
+                <h2 class="font-semibold">Manage service catalogue →</h2>
+                <p class="mt-2 text-sm text-slate-300">{{ $activeServices }} active of {{ $totalServices }} services</p>
+            </a>
+            <a href="{{ route('admin.orders.index') }}" class="rounded-xl border border-slate-800 bg-slate-900 p-6 hover:bg-slate-800">
+                <h2 class="font-semibold">Review order requests →</h2>
+                <p class="mt-2 text-sm text-slate-300">{{ $pendingOrders }} pending requests · {{ $totalOrders }} total</p>
+            </a>
+        </section>
+        <section class="mt-8 rounded-2xl border border-amber-800/60 bg-amber-950/20 p-6">
+            <h2 class="font-semibold text-amber-200">Important: manual review only</h2>
             <p class="mt-2 text-sm leading-6 text-slate-300">
-                Authentication and role protection are the first backend milestone. Orders, provider integrations,
-                deposits, and wallet accounting are not active yet. Do not accept customer payments at this stage.
+                Customers can submit order requests and admins can update their statuses. No payment is collected,
+                no wallet is credited, and no SMM provider receives these orders. Do not accept customer funds yet.
             </p>
         </section>
     </main>

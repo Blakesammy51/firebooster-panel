@@ -1,6 +1,6 @@
 # Firebooster deployment preparation
 
-Status: source foundation assembled on the isolated laravel-integration branch. Not deployed. A green automated build and manual staging review are still required.
+Status: Laravel 12 application assembled on the isolated laravel-integration branch. GitHub Actions passed on commit 47f7702ee9ab6201471045c890c1b7ee4506f598 (Composer validation/install, Vite build, SQLite migrations, 5 tests / 10 assertions). Not deployed. Manual staging review is still required.
 
 ## Current application layout
 - Static preview: repository root; keep main unchanged.
@@ -10,43 +10,48 @@ Status: source foundation assembled on the isolated laravel-integration branch. 
 - Intended free staging host candidate: EthioDeploy, subject to rechecking terms and limits.
 
 ## Before connecting hosting
-1. Wait for the GitHub Actions workflow on laravel-integration to pass.
-2. Review failed PHP, Composer, npm, migration, or feature-test steps; do not deploy with failing checks.
-3. Recheck the free host's current terms, privacy policy, free-tier limits, and database backup/restore process.
-4. Confirm the project root can be set to backend and the host serves only backend/public.
+1. Recheck the free host's current terms, privacy policy, free-tier limits, and database backup/restore process.
+2. EthioDeploy Free has no branch-preview deployments. Do not create the Firebooster project from the default main branch, because main is the static preview and not the Laravel app.
+3. At project creation, select laravel-integration as the project's production/deploy branch if the dashboard offers that choice. If it does not, stop before creating/deploying and confirm the supported way to choose a production branch. Do not merge this branch into main just to work around a missing selector.
+4. Set the project root directory to backend. Confirm the host serves backend/public.
 5. Scope the host's GitHub App access to this repository only. Do not share passwords or API tokens in chat.
 6. Configure environment values in the host's private settings, never in GitHub files.
 
 ## EthioDeploy staging candidate
-The provider's published Laravel guide describes PHP 8.2–8.5, Composer install, Vite asset builds, nginx/PHP-FPM, HTTPS, and MySQL/Postgres addons. The free plan has limited resources and sleeps after inactivity; the first request after sleep may take up to 30 seconds. Treat it as a non-critical demo only.
+
+The provider's published Laravel guide describes PHP 8.2–8.5, Composer install, Vite asset builds, nginx/PHP-FPM, HTTPS, and MySQL/Postgres addons. The free plan includes one project and a 512 MB database addon, but has limited compute, sleeps after inactivity, and provides no branch previews. Treat it as a non-critical demo only.
 
 For staging use:
 - Repository: Blakesammy51/firebooster-panel
-- Branch: laravel-integration (if branch selection is available)
+- Branch: laravel-integration (must be selected as the project's deploy/production branch at creation)
 - Root directory: backend
 - Web root: public
 - Database: fresh staging MySQL or Postgres addon, not SQLite.
 
-Set private environment variables before deployment:
+Set private environment variables before relying on the app:
 - APP_NAME=Firebooster
 - APP_ENV=production
 - APP_DEBUG=false
 - APP_URL=https://your-staging-hostname
-- APP_KEY (generate in the host or a secure local environment; never paste it into chat or commit it)
+- APP_KEY (EthioDeploy can generate and persist one on first deploy; never paste it into chat or commit it)
 - DB_CONNECTION=mysql or pgsql
 - DB_URL or the host's supported DATABASE_URL
 - SESSION_DRIVER=database
 - CACHE_STORE=database
 - QUEUE_CONNECTION=sync for free staging
-- A real private mail transport before relying on email verification.
+- MAIL_MAILER=log until a real private mail transport is configured.
 
-The app database config supports DB_URL or DATABASE_URL. Run php artisan migrate --force using the host's supported start/deploy command after configuring the database. Confirm the host does not expose .env, source files, or the repository root over HTTP.
+The app database config supports DB_URL or DATABASE_URL. Set the start command to run migrations before the platform startup command, following the provider's Laravel guide: php artisan migrate --force && ethiodeploy-start. Do not set any paid-provider credentials, payment secrets, or real customer data in this staging project.
+
+Confirm the host does not expose .env, source files, or the repository root over HTTP. If the dashboard does not allow selecting laravel-integration as the production branch on the Free plan, do not proceed; ask for a screenshot so the safe branch strategy can be confirmed.
 
 Official provider references:
-- https://ethiodeploy.com/deploy/laravel
-- https://ethiodeploy.com/terms
-- https://ethiodeploy.com/privacy
-- https://ethiodeploy.com/docs/billing
+- Laravel deployment guide: https://ethiodeploy.com/deploy/laravel
+- Getting started: https://ethiodeploy.com/docs/getting-started
+- Free plan / branch preview limits: https://ethiodeploy.com/docs/billing
+- CLI branch selection: https://ethiodeploy.com/docs/cli
+- Terms: https://ethiodeploy.com/terms
+- Privacy: https://ethiodeploy.com/privacy
 
 No repository has been connected to EthioDeploy and no deployment has been created.
 

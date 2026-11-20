@@ -21,7 +21,7 @@ In `bootstrap/app.php`, merge this alias into the existing `withMiddleware` call
 
 ```php
 $middleware->alias([
-    'admin' => \\App\\Http\\Middleware\\EnsureUserIsAdmin::class,
+    'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
 ]);
 ```
 

@@ -1,13 +1,13 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\User;
-use App\\Models\\Wallet;
-use App\\Models\\WalletTransaction;
-use App\\Services\\PaystackGateway;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Tests\\TestCase;
+use App\Models\User;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
+use App\Services\PaystackGateway;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class PaystackDepositSecurityTest extends TestCase
 {

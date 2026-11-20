@@ -6,15 +6,20 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\WalletDepositController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 require __DIR__.'/auth.php';
 
+Route::post('/webhooks/paystack', [WalletDepositController::class, 'webhook'])->name('webhooks.paystack');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('/dashboard', 'dashboard')->name('dashboard');
     Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
+    Route::post('/wallet/deposits', [WalletDepositController::class, 'store'])->name('wallet.deposit.store');
+    Route::get('/wallet/deposits/callback', [WalletDepositController::class, 'callback'])->name('wallet.deposit.callback');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
 });

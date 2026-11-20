@@ -66,7 +66,10 @@ class PaystackGateway
 
         // Backward compatibility for integrations still using Paystack's legacy header.
         $secretKey = (string) config('services.paystack.secret_key');
-        if (!$paystackSignature && $legacySignature && $secretKey !== '') {
+        // If no modern signing secret is configured, accept the legacy signature
+        // even if Paystack includes an unusable modern header during migration.
+        // When a modern secret is configured, never downgrade after its check fails.
+        if ($webhookSecret === '' && $legacySignature && $secretKey !== '') {
             $expected = hash_hmac('sha512', $rawBody, $secretKey);
             return preg_match('/^[a-f0-9]{128}$/', $legacySignature) === 1
                 && hash_equals($expected, $legacySignature);

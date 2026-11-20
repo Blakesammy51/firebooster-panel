@@ -37,6 +37,10 @@
                 <p class="mt-2 text-sm text-slate-300">{{ $pendingOrders }} pending requests · {{ $totalOrders }} total</p>
             </a>
         </section>
+        <section class="mt-4 rounded-xl border border-slate-800 bg-slate-900 p-6">
+            <a href="{{ route('admin.users.index') }}" class="font-semibold text-violet-300">View customer accounts →</a>
+            <p class="mt-2 text-sm text-slate-400">Search registered accounts and check their roles and email-verification status.</p>
+        </section>
         <section class="mt-8 rounded-2xl border border-amber-800/60 bg-amber-950/20 p-6">
             <h2 class="font-semibold text-amber-200">Important: manual review only</h2>
             <p class="mt-2 text-sm leading-6 text-slate-300">

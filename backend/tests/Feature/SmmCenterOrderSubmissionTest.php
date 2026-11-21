@@ -1,0 +1,108 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Order;
+use App\Models\Service;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
+
+class SmmCenterOrderSubmissionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function makeSupplierOrder(): Order
+    {
+        $user = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $service = Service::query()->create([
+            'name' => 'Instagram Followers',
+            'platform' => 'Instagram',
+            'category' => 'Instagram Followers',
+            'provider' => 'smm_center',
+            'provider_service_id' => '32748',
+            'description' => 'Supplier-backed service.',
+            'price_per_1000' => '5.00',
+            'minimum_quantity' => 50,
+            'maximum_quantity' => 10000,
+            'is_active' => true,
+        ]);
+
+        return Order::query()->create([
+            'user_id' => $user->id,
+            'service_id' => $service->id,
+            'target_url' => 'https://www.instagram.com/example/',
+            'quantity' => 200,
+            'unit_price' => '5.00',
+            'total_price' => '1.00',
+            'status' => 'pending',
+            'notes' => 'Paid from wallet.',
+        ]);
+    }
+
+    public function test_admin_can_submit_a_supplier_order_once(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+        Http::fake([
+            'smm-center.com/api/v2' => Http::response(['order' => 7654321]),
+        ]);
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.submit-to-provider', $order))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'provider_order_id' => '7654321',
+            'provider_status' => 'Submitted',
+            'status' => 'processing',
+        ]);
+
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => $request['action'] === 'add'
+            && $request['service'] == 32748
+            && $request['quantity'] == 200
+            && $request['key'] === 'test-provider-key');
+    }
+
+    public function test_already_claimed_order_cannot_be_submitted_again(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+        Http::fake();
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update(['provider_status' => 'submission_in_progress']);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.submit-to-provider', $order))
+            ->assertRedirect()
+            ->assertSessionHasErrors('provider');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_customers_cannot_submit_orders_to_the_provider(): void
+    {
+        Http::fake();
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+
+        $this->actingAs($customer)
+            ->post(route('admin.orders.submit-to-provider', $order))
+            ->assertForbidden();
+
+        Http::assertNothingSent();
+    }
+}

@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\\Http\\Controllers;
 
-use App\Models\Wallet;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+use App\\Models\\Wallet;
+use App\\Models\\WalletTransaction;
+use Illuminate\\Http\\Request;
+use Illuminate\\View\\View;
 
 class WalletController extends Controller
 {
@@ -18,6 +19,12 @@ class WalletController extends Controller
         return view('wallet.index', [
             'wallet' => $wallet,
             'transactions' => $wallet->transactions()->latest()->paginate(15),
+            'refundTransactions' => WalletTransaction::query()
+                ->where('user_id', $request->user()->id)
+                ->where('type', 'order_refund')
+                ->where('status', 'completed')
+                ->latest()
+                ->paginate(10, ['*'], 'refunds_page'),
         ]);
     }
 }

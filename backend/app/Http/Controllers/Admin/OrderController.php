@@ -145,6 +145,94 @@ class OrderController extends Controller
         }
     }
 
+    public function refundToWallet(Request $request, Order $order): RedirectResponse
+    {
+        $data = $request->validate([
+            'refund_amount' => ['nullable', 'required_if:status,partial', 'numeric', 'gt:0', 'decimal:0,2'],
+        ]);
+
+        try {
+            $amountKobo = DB::transaction(function () use ($order, $data) {
+                $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+
+                if ($lockedOrder->service()->value('provider') !== 'smm_center'
+                    || !$lockedOrder->provider_order_id
+                    || !in_array($lockedOrder->status, ['cancelled', 'failed', 'partial'], true)) {
+                    throw new \RuntimeException('Only supplier-backed cancelled, failed, or partial orders can be refunded.');
+                }
+
+                $expectedProviderStatus = match ($lockedOrder->status) {
+                    'cancelled' => ['cancelled', 'canceled'],
+                    'failed' => ['failed'],
+                    'partial' => ['partial'],
+                };
+                if (!in_array(strtolower((string) $lockedOrder->provider_status), $expectedProviderStatus, true)) {
+                    throw new \RuntimeException('The supplier status does not confirm this refund state. Refresh supplier status first.');
+                }
+
+                $payment = WalletTransaction::query()
+                    ->where('user_id', $lockedOrder->user_id)
+                    ->where('type', 'order_payment')
+                    ->where('status', 'completed')
+                    ->where('currency', 'NGN')
+                    ->where('reference', 'ORDER-' . $lockedOrder->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$payment) {
+                    throw new \RuntimeException('A completed NGN wallet payment could not be verified.');
+                }
+
+                $reference = 'ORDER-' . $lockedOrder->id . '-REFUND';
+                if (WalletTransaction::query()->where('reference', $reference)->exists()) {
+                    throw new \RuntimeException('A refund has already been issued for this order. Duplicate credit is blocked.');
+                }
+
+                if (in_array($lockedOrder->status, ['cancelled', 'failed'], true)) {
+                    if ($lockedOrder->provider_remains === null || $lockedOrder->provider_remains < $lockedOrder->quantity) {
+                        throw new \RuntimeException('Full refund is blocked because the supplier has not confirmed that the full quantity remains undelivered.');
+                    }
+                    $refundKobo = (int) $payment->amount_kobo;
+                } else {
+                    $refundKobo = (int) round(((float) $data['refund_amount']) * 100);
+                    if ($refundKobo < 1 || $refundKobo > (int) $payment->amount_kobo) {
+                        throw new \RuntimeException('The partial refund must be positive and cannot exceed the original amount paid.');
+                    }
+                }
+
+                $wallet = Wallet::query()->where('user_id', $lockedOrder->user_id)->lockForUpdate()->first();
+                if (!$wallet || $wallet->currency !== 'NGN') {
+                    throw new \RuntimeException('The customer NGN wallet could not be verified.');
+                }
+
+                $wallet->balance_kobo += $refundKobo;
+                $wallet->save();
+
+                WalletTransaction::query()->create([
+                    'wallet_id' => $wallet->id,
+                    'user_id' => $lockedOrder->user_id,
+                    'type' => 'order_refund',
+                    'amount_kobo' => $refundKobo,
+                    'currency' => 'NGN',
+                    'status' => 'completed',
+                    'reference' => $reference,
+                    'description' => 'Wallet refund for order #' . $lockedOrder->id,
+                    'metadata' => ['order_id' => $lockedOrder->id, 'original_payment_reference' => $payment->reference],
+                ]);
+
+                $lockedOrder->notes = trim(($lockedOrder->notes ? $lockedOrder->notes . "\\n" : '')
+                    . 'Wallet refund issued: NGN ' . number_format($refundKobo / 100, 2) . '.');
+                $lockedOrder->save();
+
+                return $refundKobo;
+            });
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['provider' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Wallet refund of ₦' . number_format($amountKobo / 100, 2) . ' issued for order #' . $order->id . '.');
+    }
+
     public function updateStatus(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([

@@ -63,4 +63,42 @@ class SmmCenterClient
     {
         return $this->call(['action' => 'balance']);
     }
+
+    public function addOrder(int $serviceId, string $targetUrl, int $quantity): array
+    {
+        if ($serviceId < 1 || $quantity < 1 || filter_var($targetUrl, FILTER_VALIDATE_URL) === false) {
+            throw new RuntimeException('Invalid supplier order details.');
+        }
+
+        $data = $this->call([
+            'action' => 'add',
+            'service' => $serviceId,
+            'link' => $targetUrl,
+            'quantity' => $quantity,
+        ]);
+
+        if (!isset($data['order']) || !is_numeric($data['order']) || (int) $data['order'] < 1) {
+            throw new RuntimeException('SMM Center did not return a valid provider order ID.');
+        }
+
+        return $data;
+    }
+
+    public function orderStatus(int $providerOrderId): array
+    {
+        if ($providerOrderId < 1) {
+            throw new RuntimeException('Invalid provider order ID.');
+        }
+
+        $data = $this->call([
+            'action' => 'status',
+            'order' => $providerOrderId,
+        ]);
+
+        if (!isset($data['status'])) {
+            throw new RuntimeException('SMM Center returned an unexpected order-status format.');
+        }
+
+        return $data;
+    }
 }

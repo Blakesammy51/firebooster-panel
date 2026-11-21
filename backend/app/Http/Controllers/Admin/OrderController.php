@@ -127,7 +127,9 @@ class OrderController extends Controller
                 $updates['status'] = 'completed';
             } elseif (in_array($normalized, ['canceled', 'cancelled'], true)) {
                 $updates['status'] = 'cancelled';
-            } elseif (in_array($normalized, ['partial', 'failed'], true)) {
+            } elseif ($normalized === 'partial') {
+                $updates['status'] = 'partial';
+            } elseif ($normalized === 'failed') {
                 $updates['status'] = 'failed';
             } else {
                 $updates['status'] = 'processing';
@@ -146,7 +148,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', Rule::in(['pending', 'awaiting_payment', 'processing', 'completed', 'cancelled', 'failed'])],
+            'status' => ['required', Rule::in(['pending', 'awaiting_payment', 'processing', 'partial', 'completed', 'cancelled', 'failed'])],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 

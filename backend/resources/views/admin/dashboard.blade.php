@@ -29,6 +29,40 @@
         @endforeach
     </section>
 
+    <section class="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6" aria-labelledby="supplier-balance-heading">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-violet-300">Supplier account</p>
+                <h2 id="supplier-balance-heading" class="mt-1 text-xl font-semibold">SMM Center balance</h2>
+                <p class="mt-1 text-sm text-slate-400">Refresh to retrieve the live balance directly from SMM Center.</p>
+            </div>
+            <form method="POST" action="{{ route('admin.dashboard.supplier-balance.refresh') }}">
+                @csrf
+                <button type="submit" class="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300">
+                    Refresh balance
+                </button>
+            </form>
+        </div>
+
+        @if ($balance = session('supplier_balance'))
+            <div class="mt-5 rounded-xl border {{ $balance['is_low'] ? 'border-amber-700 bg-amber-950/30' : 'border-emerald-800 bg-emerald-950/30' }} p-4" role="status">
+                <p class="text-sm {{ $balance['is_low'] ? 'text-amber-200' : 'text-emerald-200' }}">Current supplier balance</p>
+                <p class="mt-1 text-3xl font-bold">{{ $balance['currency'] }} {{ number_format($balance['amount'], 4) }}</p>
+                @if ($balance['is_low'])
+                    <p class="mt-2 text-sm text-amber-200">Low balance warning: below the $5.00 USD reminder threshold. Review your supplier funds before submitting more orders.</p>
+                @endif
+                <p class="mt-2 text-xs text-slate-400">Last checked: {{ $balance['checked_at'] }}</p>
+            </div>
+        @else
+            <p class="mt-5 rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-sm text-slate-300">Balance has not been checked in this session. Use Refresh balance to request the latest supplier balance.</p>
+        @endif
+
+        @error('supplier_balance')
+            <p class="mt-4 rounded-lg border border-rose-800 bg-rose-950/30 p-3 text-sm text-rose-200" role="alert">{{ $message }}</p>
+        @enderror
+        <p class="mt-3 text-xs text-slate-500">Read-only monitor. Firebooster will never deposit, withdraw, or change your supplier balance.</p>
+    </section>
+
     <section class="mt-8">
         <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div>

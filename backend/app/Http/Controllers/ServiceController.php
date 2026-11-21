@@ -1,11 +1,11 @@
 <?php
 
-namespace App\\Http\\Controllers;
+namespace App\Http\Controllers;
 
-use App\\Models\\Service;
-use App\\Models\\Wallet;
-use Illuminate\\Http\\Request;
-use Illuminate\\View\\View;
+use App\Models\Service;
+use App\Models\Wallet;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ServiceController extends Controller
 {

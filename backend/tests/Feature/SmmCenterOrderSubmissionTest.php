@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -29,7 +31,7 @@ class SmmCenterOrderSubmissionTest extends TestCase
             'is_active' => true,
         ]);
 
-        return Order::query()->create([
+        $order = Order::query()->create([
             'user_id' => $user->id,
             'service_id' => $service->id,
             'target_url' => 'https://www.instagram.com/example/',
@@ -39,6 +41,23 @@ class SmmCenterOrderSubmissionTest extends TestCase
             'status' => 'pending',
             'notes' => 'Paid from wallet.',
         ]);
+
+        $wallet = Wallet::query()->firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance_kobo' => 0, 'currency' => 'NGN']
+        );
+        WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $user->id,
+            'type' => 'order_payment',
+            'amount_kobo' => 100,
+            'currency' => 'NGN',
+            'status' => 'completed',
+            'reference' => 'ORDER-' . $order->id,
+            'description' => 'Wallet payment for order #' . $order->id,
+        ]);
+
+        return $order;
     }
 
     public function test_admin_can_submit_a_supplier_order_once(): void

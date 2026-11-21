@@ -181,6 +181,54 @@ class PaystackDepositSecurityTest extends TestCase
         ]);
     }
 
+    public function test_cancelled_paystack_checkout_marks_verified_abandoned_deposit_abandoned_without_crediting_wallet(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $wallet = Wallet::query()->create([
+            'user_id' => $user->id,
+            'balance_kobo' => 20000,
+            'currency' => 'NGN',
+        ]);
+        $transaction = WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $user->id,
+            'type' => 'deposit',
+            'amount_kobo' => 10000,
+            'currency' => 'NGN',
+            'status' => 'pending',
+            'reference' => 'FB-checkout-abandoned',
+            'description' => 'Wallet deposit via Paystack',
+            'metadata' => ['gateway' => 'paystack'],
+        ]);
+
+        $this->mock(PaystackGateway::class, function ($mock) use ($transaction, $user) {
+            $mock->shouldReceive('verify')->once()->with($transaction->reference)->andReturn([
+                'status' => 'abandoned',
+                'reference' => $transaction->reference,
+                'amount' => 10000,
+                'currency' => 'NGN',
+                'metadata' => [
+                    'user_id' => $user->id,
+                    'wallet_transaction_id' => $transaction->id,
+                ],
+                'gateway_response' => 'Payment session abandoned',
+            ]);
+        });
+
+        $this->actingAs($user)
+            ->get(route('wallet.deposit.cancel', ['reference' => $transaction->reference]))
+            ->assertRedirect(route('wallet.index'));
+
+        $this->assertDatabaseHas('wallets', [
+            'id' => $wallet->id,
+            'balance_kobo' => 20000,
+        ]);
+        $this->assertDatabaseHas('wallet_transactions', [
+            'id' => $transaction->id,
+            'status' => 'abandoned',
+        ]);
+    }
+
     public function test_webhook_with_mismatched_amount_does_not_credit_wallet(): void
     {
         config(['services.paystack.webhook_secret' => 'whsec_test_signing_secret']);

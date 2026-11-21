@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::post('/wallet/deposits', [WalletDepositController::class, 'store'])->name('wallet.deposit.store');
     Route::get('/wallet/deposits/callback', [WalletDepositController::class, 'callback'])->name('wallet.deposit.callback');
+    Route::get('/wallet/deposits/cancel', [WalletDepositController::class, 'cancel'])->name('wallet.deposit.cancel');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
 });

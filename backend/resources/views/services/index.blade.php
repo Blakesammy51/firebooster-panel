@@ -18,9 +18,38 @@
 <section class="mb-5 rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
     <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Browse platforms</p>
     <div class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2" aria-label="Service platforms">
-        <a href="{{ route('services.index', array_filter(['q' => $search, 'category' => null])) }}" class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold {{ $selectedPlatform === '' ? 'bg-violet-600 text-white' : 'border border-slate-700 bg-slate-950 text-slate-300' }}">All</a>
+        <a href="{{ route('services.index', array_filter(['q' => $search, 'category' => null])) }}" aria-label="All platforms" class="flex min-w-[76px] shrink-0 flex-col items-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold transition {{ $selectedPlatform === '' ? 'bg-violet-600 text-white' : 'border border-slate-700 bg-slate-950 text-slate-300 hover:border-violet-500' }}">
+            <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            <span>All</span>
+        </a>
         @foreach ($platforms as $platform)
-            <a href="{{ route('services.index', array_filter(['platform' => $platform, 'q' => $search])) }}" class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold {{ mb_strtolower($selectedPlatform) === mb_strtolower($platform) ? 'bg-violet-600 text-white' : 'border border-slate-700 bg-slate-950 text-slate-300' }}">{{ $platform }}</a>
+            <a href="{{ route('services.index', array_filter(['platform' => $platform, 'q' => $search])) }}" aria-label="{{ $platform }}" class="flex min-w-[76px] shrink-0 flex-col items-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold transition {{ mb_strtolower($selectedPlatform) === mb_strtolower($platform) ? 'bg-violet-600 text-white' : 'border border-slate-700 bg-slate-950 text-slate-300 hover:border-violet-500' }}">
+                <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    @switch(mb_strtolower($platform))
+                        @case('instagram')
+                            <rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/>
+                            @break
+                        @case('facebook')
+                            <path d="M14.2 21v-8h2.7l.4-3.1h-3.1V8c0-.9.3-1.5 1.6-1.5h1.7V3.7c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2H8v3.1h2.8v8z" fill="currentColor" stroke="none"/>
+                            @break
+                        @case('telegram')
+                            <path d="m22 3-7 18-4-7-7-4z"/><path d="m11 14 5-5"/>
+                            @break
+                        @case('youtube')
+                            <rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none"/>
+                            @break
+                        @case('tiktok')
+                            <path d="M14 3v11.2a4.2 4.2 0 1 1-3-4V7.1c-1.8-.2-3.5.3-4.8 1.5A7.2 7.2 0 1 0 18 14.2V8.8c1.1.8 2.4 1.3 4 1.4V7c-3.2-.2-5.5-1.8-6.2-4z" fill="currentColor" stroke="none"/>
+                            @break
+                        @case('x (twitter)')
+                            <path d="M4 4 20 20M20 4 4 20" stroke-width="2.4"/>
+                            @break
+                        @default
+                            <circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>
+                    @endswitch
+                </svg>
+                <span class="whitespace-nowrap">{{ $platform }}</span>
+            </a>
         @endforeach
     </div>
     <form method="GET" action="{{ route('services.index') }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -44,10 +73,10 @@
 <div class="grid gap-4 md:grid-cols-2">
 @forelse ($services as $service)
 <article class="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-    <div class="flex flex-wrap items-center justify-between gap-2"><p class="text-xs font-semibold uppercase tracking-wider text-violet-300">{{ $service->platform }}@if($service->category) · {{ $service->category }}@endif</p><span class="rounded-full bg-emerald-950 px-2.5 py-1 text-xs text-emerald-300">Available</span></div>
+    <div class="flex flex-wrap items-center justify-between gap-2"><p class="text-xs font-semibold uppercase tracking-wider text-violet-300">{{ $platformMap[$service->platform] ?? $service->platform }}@if($service->category) · {{ $service->category }}@endif</p><span class="rounded-full bg-emerald-950 px-2.5 py-1 text-xs text-emerald-300">Available</span></div>
     <h3 class="mt-2 text-lg font-bold">{{ $service->name }}</h3>
     @if ($service->provider_service_id)<p class="mt-1 text-xs text-slate-500">Service ID: {{ $service->provider_service_id }}</p>@endif
-    @if ($service->description)<p class="mt-2 text-sm text-slate-400">{{ $service->description }}</p>@endif
+    @if ($service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.'))<p class="mt-2 text-sm text-slate-400">{{ $service->description }}</p>@endif
     <p class="mt-4 text-lg font-bold text-emerald-300">₦{{ number_format((float) $service->price_per_1000, 2) }} <span class="text-xs font-normal text-slate-400">per 1,000</span></p>
     <p class="mt-1 text-xs text-slate-400">Minimum: {{ number_format($service->minimum_quantity) }} · Maximum: {{ number_format($service->maximum_quantity) }}</p>
     @if ($service->provider_refill || $service->provider_cancel)

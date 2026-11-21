@@ -47,6 +47,7 @@ class SmmCenterServiceSyncTest extends TestCase
             'provider' => 'smm_center',
             'provider_service_id' => '32748',
             'name' => 'Instagram Followers',
+            'platform' => 'Instagram',
             'category' => 'Instagram Cheapest Services',
             'provider_rate' => '0.900000',
             'provider_currency' => 'USD',
@@ -60,6 +61,35 @@ class SmmCenterServiceSyncTest extends TestCase
         $this->assertFalse($service->is_active);
         $this->assertSame('0.00', $service->price_per_1000);
         Http::assertSentCount(2);
+    }
+
+
+    public function test_customer_catalogue_normalizes_legacy_supplier_category_platforms(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        Service::query()->create([
+            'name' => 'Instagram Followers [Flag for Review OFF]',
+            'platform' => 'Instagram Followers [Flag for Review OFF]',
+            'category' => 'Instagram Followers [Flag for Review OFF]',
+            'provider' => 'smm_center',
+            'provider_service_id' => '654321',
+            'description' => 'Imported from SMM Center. Supplier category: Instagram Followers [Flag for Review OFF]',
+            'price_per_1000' => '3500.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 100000,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($customer)
+            ->get(route('services.index'))
+            ->assertOk()
+            ->assertSee('Instagram')
+            ->assertDontSee('Browse platforms Instagram Followers [Flag for Review OFF]');
+
+        $this->actingAs($customer)
+            ->get(route('services.index', ['platform' => 'Instagram']))
+            ->assertOk()
+            ->assertSee('Instagram Followers [Flag for Review OFF]');
     }
 
     public function test_admin_cannot_activate_supplier_service_with_zero_selling_price(): void

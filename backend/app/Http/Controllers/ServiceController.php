@@ -9,6 +9,43 @@ use Illuminate\View\View;
 
 class ServiceController extends Controller
 {
+    /**
+     * Convert supplier category labels into customer-facing social platforms.
+     * Unknown platforms retain their supplied label so new networks remain discoverable.
+     */
+    private function normalizePlatform(string $value): string
+    {
+        $label = trim($value);
+        $text = mb_strtolower($label);
+
+        $known = [
+            'Instagram' => '/instagram|\big\b/',
+            'Facebook' => '/facebook|\bfb\b/',
+            'Telegram' => '/telegram|\btg\b/',
+            'YouTube' => '/youtube|\byoutube\b|\byt\b/',
+            'TikTok' => '/tiktok|tik tok/',
+            'X (Twitter)' => '/twitter|\bx\s*(?:\(|$)/',
+            'Threads' => '/threads/',
+            'WhatsApp' => '/whatsapp/',
+            'LinkedIn' => '/linkedin/',
+            'Snapchat' => '/snapchat/',
+            'Pinterest' => '/pinterest/',
+            'Reddit' => '/reddit/',
+            'Discord' => '/discord/',
+            'Twitch' => '/twitch/',
+            'Spotify' => '/spotify/',
+            'SoundCloud' => '/soundcloud/',
+        ];
+
+        foreach ($known as $platform => $pattern) {
+            if (preg_match($pattern, $text)) {
+                return $platform;
+            }
+        }
+
+        return $label;
+    }
+
     public function index(Request $request): View
     {
         $wallet = Wallet::query()->firstOrCreate(
@@ -16,12 +53,13 @@ class ServiceController extends Controller
             ['balance_kobo' => 0, 'currency' => 'NGN']
         );
 
-        // Only customer-ready services should influence catalogue navigation or results.
+        // Supplier categories were historically stored in the platform column.
+        // Build a display-label map so existing imports are corrected without a DB rewrite.
         $available = Service::query()
             ->where('is_active', true)
             ->where('price_per_1000', '>', 0);
 
-        $platforms = (clone $available)
+        $rawPlatforms = (clone $available)
             ->whereNotNull('platform')
             ->where('platform', '!=', '')
             ->select('platform')
@@ -29,19 +67,28 @@ class ServiceController extends Controller
             ->orderBy('platform')
             ->pluck('platform');
 
+        $platformMap = $rawPlatforms->mapWithKeys(fn ($raw) => [
+            $raw => $this->normalizePlatform((string) $raw),
+        ]);
+        $platforms = $platformMap->values()->unique()->sort()->values();
+
         $selectedPlatform = trim((string) $request->query('platform', ''));
         $selectedCategory = trim((string) $request->query('category', ''));
         $search = trim((string) $request->query('q', ''));
 
+        $matchingRawPlatforms = $selectedPlatform === ''
+            ? []
+            : $platformMap->filter(fn ($label) => mb_strtolower($label) === mb_strtolower($selectedPlatform))->keys()->all();
+
         $categoriesQuery = (clone $available)->whereNotNull('category')->where('category', '!=', '');
         if ($selectedPlatform !== '') {
-            $categoriesQuery->whereRaw('LOWER(platform) = ?', [mb_strtolower($selectedPlatform)]);
+            $categoriesQuery->whereIn('platform', $matchingRawPlatforms);
         }
         $categories = $categoriesQuery->select('category')->distinct()->orderBy('category')->pluck('category');
 
         $servicesQuery = (clone $available);
         if ($selectedPlatform !== '') {
-            $servicesQuery->whereRaw('LOWER(platform) = ?', [mb_strtolower($selectedPlatform)]);
+            $servicesQuery->whereIn('platform', $matchingRawPlatforms);
         }
         if ($selectedCategory !== '') {
             $servicesQuery->whereRaw('LOWER(category) = ?', [mb_strtolower($selectedCategory)]);
@@ -58,6 +105,7 @@ class ServiceController extends Controller
             'services' => $servicesQuery->orderBy('platform')->orderBy('name')->paginate(15)->withQueryString(),
             'wallet' => $wallet,
             'platforms' => $platforms,
+            'platformMap' => $platformMap,
             'categories' => $categories,
             'selectedPlatform' => $selectedPlatform,
             'selectedCategory' => $selectedCategory,

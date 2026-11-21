@@ -29,6 +29,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
+    Route::post('/services/smm-center/sync', [AdminServiceController::class, 'syncSmmCenter'])->name('services.smm-center.sync');
     Route::post('/services', [AdminServiceController::class, 'store'])->name('services.store');
     Route::put('/services/{service}', [AdminServiceController::class, 'update'])->name('services.update');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');

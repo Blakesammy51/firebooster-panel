@@ -108,4 +108,53 @@ class SmmCenterServiceSyncTest extends TestCase
 
         Http::assertNothingSent();
     }
+
+    public function test_admin_can_search_services_by_name_category_platform_and_supplier_id(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+
+        Service::query()->create([
+            'name' => 'Instagram Followers Fast',
+            'platform' => 'Instagram',
+            'category' => 'Instagram Cheapest Services',
+            'provider' => 'smm_center',
+            'provider_service_id' => '32748',
+            'description' => 'Imported Instagram service.',
+            'price_per_1000' => '0.00',
+            'minimum_quantity' => 50,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+        Service::query()->create([
+            'name' => 'TikTok Likes',
+            'platform' => 'TikTok',
+            'description' => 'TikTok service.',
+            'price_per_1000' => '10.00',
+            'minimum_quantity' => 1,
+            'maximum_quantity' => 1000,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index', ['search' => 'Instagram']))
+            ->assertOk()
+            ->assertSee('Instagram Followers Fast')
+            ->assertDontSee('TikTok Likes')
+            ->assertSee('Search catalogue');
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index', ['search' => '32748']))
+            ->assertOk()
+            ->assertSee('Instagram Followers Fast')
+            ->assertDontSee('TikTok Likes');
+    }
+
+    public function test_customers_cannot_search_admin_service_catalogue(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+
+        $this->actingAs($customer)
+            ->get(route('admin.services.index', ['search' => 'Instagram']))
+            ->assertForbidden();
+    }
 }

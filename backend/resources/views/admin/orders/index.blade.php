@@ -30,7 +30,7 @@
 @endif
 <form method="POST" action="{{ route('admin.orders.update',$order) }}" class="mt-4 grid gap-2 border-t border-slate-800 pt-4 sm:grid-cols-[190px_1fr_auto]">@csrf @method('PATCH')
 <select name="status" class="rounded-lg bg-slate-950 p-3">@foreach (['pending','awaiting_payment','processing','partial','completed','cancelled','failed'] as $s)<option value="{{ $s }}" @selected($order->status === $s)>{{ ucfirst(str_replace('_',' ',$s)) }}</option>@endforeach</select>
-<input name="notes" maxlength="2000" value="{{ $order->notes }}" placeholder="Internal note" class="min-w-0 rounded-lg bg-slate-950 p-3"><button class="rounded-lg border border-violet-500 px-4 py-3">Save order</button></form>
+<input name="notes" maxlength="2000" value="{{ $order->provider_order_id ? str_replace('Paid from wallet. Awaiting manual review; not submitted to a provider.', 'Paid from wallet.', $order->notes) : $order->notes }}" placeholder="Internal note" class="min-w-0 rounded-lg bg-slate-950 p-3"><button class="rounded-lg border border-violet-500 px-4 py-3">Save order</button></form>
 </div></article>
 @empty<p class="rounded-xl border border-slate-800 bg-slate-900 p-6 text-slate-400">No matching orders found.</p>@endforelse</div>
 <div class="mt-5">{{ $orders->links() }}</div><p class="mt-6 text-xs text-amber-300">Supplier submission is a separate admin action. If a submission cannot be confirmed, check the SMM Center dashboard before retrying. Duplicate submissions are blocked.</p>

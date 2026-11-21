@@ -102,7 +102,11 @@ class OrderController extends Controller
                 'provider_status' => 'Submitted',
                 'provider_submitted_at' => now(),
                 'status' => 'processing',
-                'notes' => trim(($order->notes ? $order->notes . "\n" : '') . 'Submitted to SMM Center. Provider order ID: ' . $response['order']),
+                'notes' => trim(str_replace(
+                    'Paid from wallet. Awaiting manual review; not submitted to a provider.',
+                    'Paid from wallet.',
+                    (string) $order->notes
+                ) . "\n" . 'Submitted to SMM Center. Provider order ID: ' . $response['order']),
             ]);
 
             return back()->with('status', 'Order #' . $order->id . ' was submitted to SMM Center. Provider order ID: ' . $response['order']);

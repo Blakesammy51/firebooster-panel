@@ -359,7 +359,7 @@ class SmmCenterOrderSubmissionTest extends TestCase
             ->assertOk()
             ->assertSee('0.180000 USD')
             ->assertSee('Margin not calculated')
-            ->assertSee('verified exchange-rate snapshot is required');
+            ->assertSee('save a verified USD-to-NGN rate and its source below');
     }
 
     public function test_admin_order_page_shows_gross_difference_only_for_ngn_supplier_cost(): void

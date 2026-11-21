@@ -16,12 +16,27 @@ class OrderController extends Controller
 {
     public function index(Request $request): View
     {
+        $orders = Order::query()
+            ->with('service')
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->paginate(15);
+
+        $refundReferences = $orders->getCollection()
+            ->map(fn (Order $order) => 'ORDER-' . $order->id . '-REFUND')
+            ->all();
+
+        $refunds = WalletTransaction::query()
+            ->where('user_id', $request->user()->id)
+            ->where('type', 'order_refund')
+            ->where('status', 'completed')
+            ->whereIn('reference', $refundReferences)
+            ->get()
+            ->keyBy('reference');
+
         return view('orders.index', [
-            'orders' => Order::query()
-                ->with('service')
-                ->where('user_id', $request->user()->id)
-                ->latest()
-                ->paginate(15),
+            'orders' => $orders,
+            'refunds' => $refunds,
         ]);
     }
 

@@ -81,6 +81,11 @@
                 <h3 class="mt-2 font-semibold">Review orders →</h3>
                 <p class="mt-2 text-sm text-slate-300">{{ $pendingOrders }} pending · {{ $totalOrders }} total orders</p>
             </a>
+            <a href="{{ route('admin.reports.supplier') }}" class="rounded-xl border border-emerald-800 bg-emerald-950/30 p-5 transition hover:bg-emerald-950/60">
+                <span class="text-xs font-semibold uppercase tracking-wide text-emerald-300">Reports</span>
+                <h3 class="mt-2 font-semibold">Supplier spending & profit →</h3>
+                <p class="mt-2 text-sm text-slate-300">Review supplier charges, confirmed sales and verified margins</p>
+            </a>
             <a href="{{ route('admin.users.index') }}" class="rounded-xl border border-slate-800 bg-slate-900 p-5 transition hover:bg-slate-800">
                 <span class="text-xs font-semibold uppercase tracking-wide text-sky-300">Customers</span>
                 <h3 class="mt-2 font-semibold">View customer accounts →</h3>

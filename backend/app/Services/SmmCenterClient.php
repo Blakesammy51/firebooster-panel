@@ -102,4 +102,43 @@ class SmmCenterClient
 
         return $data;
     }
+
+    /**
+     * Fetch up to 100 order statuses in one supplier request.
+     *
+     * The SMM Center API returns a map keyed by provider order ID for batch
+     * requests. Single-order responses are normalized to the same shape.
+     */
+    public function orderStatuses(array $providerOrderIds): array
+    {
+        $ids = array_values(array_unique(array_map('strval', $providerOrderIds)));
+
+        if ($ids === [] || count($ids) > 100) {
+            throw new RuntimeException('A batch must contain between 1 and 100 provider order IDs.');
+        }
+
+        foreach ($ids as $id) {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                throw new RuntimeException('Invalid provider order ID in status batch.');
+            }
+        }
+
+        if (count($ids) === 1) {
+            return [$ids[0] => $this->orderStatus((int) $ids[0])];
+        }
+
+        $data = $this->call([
+            'action' => 'status',
+            'orders' => implode(',', $ids),
+        ]);
+
+        $statuses = [];
+        foreach ($data as $id => $status) {
+            if (is_array($status) && ctype_digit((string) $id) && isset($status['status'])) {
+                $statuses[(string) $id] = $status;
+            }
+        }
+
+        return $statuses;
+    }
 }

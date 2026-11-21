@@ -92,6 +92,31 @@ class SmmCenterOrderSubmissionTest extends TestCase
             && $request['key'] === 'test-provider-key');
     }
 
+    public function test_order_without_confirmed_wallet_payment_cannot_be_submitted(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+        Http::fake();
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        WalletTransaction::query()->where('reference', 'ORDER-' . $order->id)->delete();
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.submit-to-provider', $order))
+            ->assertRedirect()
+            ->assertSessionHasErrors('provider');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'provider_order_id' => null,
+            'provider_status' => null,
+        ]);
+        Http::assertNothingSent();
+    }
+
     public function test_already_claimed_order_cannot_be_submitted_again(): void
     {
         config([

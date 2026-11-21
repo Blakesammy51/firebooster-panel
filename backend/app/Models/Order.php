@@ -10,7 +10,8 @@ class Order extends Model
     protected $fillable = [
         'user_id', 'service_id', 'target_url', 'quantity',
         'unit_price', 'total_price', 'status', 'notes', 'provider_order_id',
-        'provider_status', 'provider_charge', 'provider_currency', 'provider_start_count',
+        'provider_status', 'provider_charge', 'provider_currency', 'provider_fx_rate',
+        'provider_fx_source', 'provider_fx_captured_at', 'provider_start_count',
         'provider_remains', 'provider_submitted_at',
     ];
 
@@ -21,6 +22,8 @@ class Order extends Model
             'unit_price' => 'decimal:2',
             'total_price' => 'decimal:2',
             'provider_charge' => 'decimal:6',
+            'provider_fx_rate' => 'decimal:4',
+            'provider_fx_captured_at' => 'datetime',
             'provider_start_count' => 'integer',
             'provider_remains' => 'integer',
             'provider_submitted_at' => 'datetime',

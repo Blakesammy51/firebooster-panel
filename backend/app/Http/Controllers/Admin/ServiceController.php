@@ -125,6 +125,13 @@ class ServiceController extends Controller
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
+
+        if ($service->provider !== null && $data['is_active'] && (float) $data['price_per_1000'] <= 0) {
+            return back()->withErrors([
+                'price_per_1000' => 'Set a selling price greater than zero before activating a supplier service.',
+            ])->withInput();
+        }
+
         $service->update($data);
 
         return back()->with('status', 'Service updated.');

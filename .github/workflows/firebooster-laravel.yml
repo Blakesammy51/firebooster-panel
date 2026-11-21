@@ -5,10 +5,12 @@ on:
     branches:
       - laravel-integration
       - wallet-foundation
+      - customer-catalogue-phase-1
   pull_request:
     branches:
       - main
       - laravel-integration
+      - wallet-foundation
   workflow_dispatch:
 
 permissions:

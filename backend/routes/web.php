@@ -35,5 +35,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::post('/orders/{order}/submit-to-provider', [AdminOrderController::class, 'submitToProvider'])->name('orders.submit-to-provider');
     Route::post('/orders/{order}/refresh-provider-status', [AdminOrderController::class, 'refreshProviderStatus'])->name('orders.refresh-provider-status');
+    Route::post('/orders/{order}/refund', [AdminOrderController::class, 'refundToWallet'])->name('orders.refund');
     Route::patch('/orders/{order}', [AdminOrderController::class, 'updateStatus'])->name('orders.update');
 });

@@ -20,13 +20,13 @@ document.querySelectorAll('.order-form').forEach((form) => {
     const total = form.querySelector('.order-total');
     const balanceAfter = form.querySelector('.balance-after');
     const feedback = form.querySelector('.order-feedback');
-    const pricePer1000 = Number(form.dataset.pricePer1000);
-    const walletKobo = Number(form.dataset.walletKobo);
+    const pricePer1000 = Number.parseFloat(form.getAttribute('data-price-per-1000'));
+    const walletKobo = Number.parseInt(form.getAttribute('data-wallet-kobo'), 10);
     const money = (kobo) => '₦' + (kobo / 100).toFixed(2);
 
     const updateEstimate = () => {
         const amount = Number(quantity.value);
-        if (!Number.isSafeInteger(amount) || amount < Number(quantity.min) || amount > Number(quantity.max)) {
+        if (!Number.isSafeInteger(amount) || !Number.isFinite(pricePer1000) || !Number.isFinite(walletKobo) || amount < Number(quantity.min) || amount > Number(quantity.max)) {
             total.textContent = '—';
             balanceAfter.textContent = '—';
             feedback.textContent = 'Enter a quantity within the allowed limits.';

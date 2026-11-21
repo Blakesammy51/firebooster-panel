@@ -17,6 +17,19 @@
     @endif
 </div>
 @endif
+@if ($order->provider_order_id && in_array($order->status, ['cancelled', 'failed', 'partial'], true))
+<form method="POST" action="{{ route('admin.orders.refund', $order) }}" class="mt-3 flex flex-wrap items-end gap-3">@csrf
+    @if ($order->status === 'partial')
+        <label class="text-sm text-slate-300">Approved refund (NGN)
+            <input name="refund_amount" type="number" min="0.01" step="0.01" required class="mt-1 block rounded-lg bg-slate-950 p-2" placeholder="e.g. 0.40">
+        </label>
+        <span class="text-xs text-amber-300">Enter the amount approved after reviewing delivered quantity.</span>
+    @else
+        <span class="text-xs text-amber-300">Full refund is available only when supplier confirms the entire quantity remains undelivered.</span>
+    @endif
+    <button class="rounded-lg border border-amber-500 px-4 py-2 text-amber-200">Issue wallet refund</button>
+</form>
+@endif
 @if ($order->provider_order_id)
 <form method="POST" action="{{ route('admin.orders.refresh-provider-status', $order) }}" class="mt-3">@csrf<button class="rounded-lg border border-emerald-500 px-4 py-2 text-emerald-200">Refresh supplier status</button></form>
 @endif

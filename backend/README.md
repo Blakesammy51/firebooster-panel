@@ -43,15 +43,29 @@ There is no public admin registration and no default admin password. All new use
 - Customer order-request form and private order history.
 - Server-side price calculation; browser-submitted prices are ignored.
 - Admin order queue with manually controlled request statuses.
+- SMM Center supplier service import, guarded order submission, supplier status refresh, and wallet refund controls.
+- Scheduled SMM Center status synchronization: open supplier-backed orders are checked every five minutes in batches of up to 100; terminal orders are excluded and concurrent admin terminal changes are preserved.
 - Feature tests for admin access control and registration defaults.
+
+## Automatic supplier status updates
+
+The Laravel scheduler registers `smm-center:sync-order-statuses` every five minutes. It only checks supplier-backed orders with confirmed provider order IDs that are still locally pending or processing. It uses batch status requests, leaves records unchanged when the supplier omits an order, and does not overwrite a terminal status changed by an administrator while the API request is running.
+
+To activate the schedule on a host that supports cron, configure this cron entry (replace the path with the deployed backend directory):
+
+    * * * * * cd /path/to/backend && php artisan schedule:run >> /dev/null 2>&1
+
+The scheduler does not run merely because the web application is deployed. Confirm that the hosting plan supports scheduled cron tasks before enabling this feature. The command can also be run manually with:
+
+    php artisan smm-center:sync-order-statuses
 
 ## CI verification
 GitHub Actions passed on commit 47f7702ee9ab6201471045c890c1b7ee4506f598. Composer validation/install, frontend asset build, SQLite migrations, and all 5 tests (10 assertions) completed successfully. This is a clean automated baseline, not a full production security audit or deployment.
 
 ## Important limitations
 - Order requests are NOT paid orders. They are stored as pending records for review only.
-- No wallet, deposit, payment gateway, refunds, SMM provider API, or automatic fulfillment exists.
-- Admin status changes do not charge customers or send requests to a provider.
+- Supplier status polling is automated only when the host scheduler is configured; provider order submission remains a separate admin action.
+- Provider status updates do not themselves issue customer wallet refunds; refunds remain an explicit admin action with payment and supplier-state checks.
 - Do not accept customer funds until payment verification, wallet ledger, provider adapter, idempotency, reconciliation, and security testing are implemented.
 
 ## Deployment

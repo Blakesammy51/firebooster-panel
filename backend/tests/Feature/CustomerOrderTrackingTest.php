@@ -78,4 +78,31 @@ class CustomerOrderTrackingTest extends TestCase
             ->assertDontSee('3557473')
             ->assertDontSee('In progress');
     }
+
+    public function test_customer_sees_all_four_steps_completed_for_completed_order(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $service = $this->createSupplierService();
+
+        Order::query()->create([
+            'user_id' => $customer->id,
+            'service_id' => $service->id,
+            'target_url' => 'https://www.instagram.com/example/',
+            'quantity' => 10,
+            'unit_price' => '3500.00',
+            'total_price' => '35.00',
+            'status' => 'completed',
+            'provider_remains' => 0,
+        ]);
+
+        $response = $this->actingAs($customer)->get(route('orders.index'));
+
+        $response->assertOk()
+            ->assertSee('Your order has been marked as completed.')
+            ->assertSee('Completed');
+
+        // The responsive view renders both mobile and desktop layouts; each has four completed steps.
+        $this->assertSame(8, substr_count($response->getContent(), 'bg-emerald-700 text-white'));
+    }
+
 }

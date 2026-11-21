@@ -67,6 +67,7 @@ class OrderController extends Controller
             $order->setAttribute('customer_tracking', [
                 'steps' => ['Order placed', 'Review', 'Processing', $terminalLabel],
                 'active_step' => $activeStep,
+                'is_complete' => $status === 'completed',
                 'message' => $message,
                 'delivered' => $delivered,
                 'remaining' => $remaining,

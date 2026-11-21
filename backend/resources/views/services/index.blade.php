@@ -129,8 +129,12 @@ const stickyBalance = document.getElementById('sticky-balance-after');
 const stickyFeedback = document.getElementById('sticky-order-feedback');
 const stickySubmit = document.getElementById('sticky-submit');
 let activeOrderForm = document.querySelector('.order-form');
+if (activeOrderForm) {
+    if (stickyName) stickyName.textContent = activeOrderForm.getAttribute('data-service-name') || 'Selected service';
+    if (stickySubmit) stickySubmit.setAttribute('form', activeOrderForm.id);
+}
 
- document.querySelectorAll('.order-form').forEach((form) => {
+document.querySelectorAll('.order-form').forEach((form) => {
     const quantity = form.querySelector('.quantity-input');
     const total = form.querySelector('.order-total');
     const balanceAfter = form.querySelector('.balance-after');

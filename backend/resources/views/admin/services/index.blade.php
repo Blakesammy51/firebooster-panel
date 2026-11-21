@@ -55,8 +55,8 @@
 
     <form method="GET" action="{{ route('admin.services.index') }}" class="mb-6 flex flex-col gap-3 rounded-xl border border-violet-800 bg-slate-900 p-4 sm:flex-row">
         <input type="hidden" name="status" value="{{ $status }}">
-        <input name="search" value="{{ $search }}" maxlength="120" placeholder="Search name, platform, category or SMM Center ID…" aria-label="Search services" class="min-w-0 flex-1 rounded-lg bg-slate-950 p-3 text-slate-100">
-        <button class="rounded-lg bg-violet-600 px-5 py-3 font-semibold">Search catalogue</button>
+        <input name="search" value="{{ $search }}" maxlength="120" placeholder="Search service name, local ID (#3438) or supplier ID (#3148)…" aria-label="Search services" class="min-w-0 flex-1 rounded-lg bg-slate-950 p-3 text-slate-100">
+        <button class="rounded-lg bg-violet-600 px-5 py-3 font-semibold">Find service</button>
         @if ($search !== '' || $status !== 'all')
             <a href="{{ route('admin.services.index') }}" class="rounded-lg border border-slate-600 px-5 py-3 text-center">Clear filters</a>
         @endif
@@ -81,6 +81,7 @@
     <form method="POST" action="{{ route('admin.services.store') }}" class="mb-8 grid gap-3 rounded-xl border border-slate-800 bg-slate-900 p-5 md:grid-cols-2">
         @csrf
         <h2 class="text-xl font-semibold md:col-span-2">Add a service</h2>
+        <p class="text-sm text-slate-400 md:col-span-2">To add an imported SMM Center service, search by its supplier ID or name above, then set your NGN selling price and activate it in the matching result below.</p>
         <input name="name" required maxlength="120" placeholder="Service name" class="rounded-lg bg-slate-950 p-3">
         <input name="platform" required maxlength="40" placeholder="Platform (Instagram, TikTok…)" class="rounded-lg bg-slate-950 p-3">
         <textarea name="description" required maxlength="2000" placeholder="Description" class="rounded-lg bg-slate-950 p-3 md:col-span-2"></textarea>
@@ -99,11 +100,11 @@
             <form method="POST" action="{{ route('admin.services.update', $service) }}" class="grid gap-3 rounded-xl border border-slate-800 bg-slate-900 p-5 md:grid-cols-2">
                 @csrf
                 @method('PUT')
-                <h2 class="font-semibold md:col-span-2">#{{ $service->id }} · {{ $service->name }}</h2>
+                <h2 class="font-semibold md:col-span-2">Local service #{{ $service->id }} · {{ $service->name }}</h2>
 
                 @if ($service->provider === 'smm_center')
                     <p class="text-xs text-violet-200 md:col-span-2">
-                        SMM Center ID {{ $service->provider_service_id }} · {{ $service->category }} ·
+                        SMM Center supplier ID #{{ $service->provider_service_id }} · {{ $service->category }} ·
                         Supplier rate {{ $service->provider_rate }} {{ $service->provider_currency }} / 1,000 ·
                         Type {{ $service->provider_type }} ·
                         Refill {{ $service->provider_refill ? 'Yes' : 'No' }} ·

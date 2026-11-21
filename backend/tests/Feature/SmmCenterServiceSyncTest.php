@@ -170,13 +170,35 @@ class SmmCenterServiceSyncTest extends TestCase
             ->assertOk()
             ->assertSee('Instagram Followers Fast')
             ->assertDontSee('TikTok Likes')
-            ->assertSee('Search catalogue');
+            ->assertSee('Find service');
 
         $this->actingAs($admin)
             ->get(route('admin.services.index', ['search' => '32748']))
             ->assertOk()
             ->assertSee('Instagram Followers Fast')
             ->assertDontSee('TikTok Likes');
+    }
+
+    public function test_admin_can_search_services_by_hash_prefixed_local_or_supplier_id(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $service = Service::query()->create([
+            'name' => 'Imported Instagram Followers',
+            'platform' => 'Instagram',
+            'category' => 'Instagram Followers',
+            'provider' => 'smm_center',
+            'provider_service_id' => '3148',
+            'description' => 'Imported supplier service.',
+            'price_per_1000' => '0.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.services.index', ['search' => '#3148']))
+            ->assertOk()->assertSee('Imported Instagram Followers');
+        $this->actingAs($admin)->get(route('admin.services.index', ['search' => '#'.$service->id]))
+            ->assertOk()->assertSee('Imported Instagram Followers');
     }
 
     public function test_customers_cannot_search_admin_service_catalogue(): void

@@ -50,7 +50,8 @@ class ServiceController extends Controller
             'search' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', 'in:all,active,inactive'],
         ]);
-        $search = trim($filters['search'] ?? '');
+        $rawSearch = trim($filters['search'] ?? '');
+        $search = ltrim($rawSearch, '#');
         $status = $filters['status'] ?? 'all';
 
         $query = Service::query()->latest();
@@ -65,6 +66,9 @@ class ServiceController extends Controller
                     ->orWhere('platform', 'like', '%'.$search.'%')
                     ->orWhere('category', 'like', '%'.$search.'%')
                     ->orWhere('provider_service_id', 'like', '%'.$search.'%');
+                if (ctype_digit($search)) {
+                    $builder->orWhere('id', (int) $search);
+                }
             });
         }
 
@@ -73,7 +77,7 @@ class ServiceController extends Controller
             'providerServiceCount' => Service::query()->where('provider', 'smm_center')->count(),
             'activeServiceCount' => Service::query()->where('is_active', true)->count(),
             'inactiveServiceCount' => Service::query()->where('is_active', false)->count(),
-            'search' => $search,
+            'search' => $rawSearch,
             'status' => $status,
         ]);
     }

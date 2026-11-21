@@ -62,6 +62,42 @@ class SmmCenterServiceSyncTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    public function test_admin_cannot_activate_supplier_service_with_zero_selling_price(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $service = Service::query()->create([
+            'name' => 'Imported Instagram Followers',
+            'platform' => 'Instagram',
+            'category' => 'Instagram Followers',
+            'provider' => 'smm_center',
+            'provider_service_id' => '98765',
+            'description' => 'Imported supplier service.',
+            'price_per_1000' => '0.00',
+            'minimum_quantity' => 50,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.services.update', $service), [
+                'name' => $service->name,
+                'platform' => $service->platform,
+                'description' => $service->description,
+                'price_per_1000' => '0.00',
+                'minimum_quantity' => 50,
+                'maximum_quantity' => 10000,
+                'is_active' => '1',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('price_per_1000');
+
+        $this->assertDatabaseHas('services', [
+            'id' => $service->id,
+            'price_per_1000' => '0.00',
+            'is_active' => false,
+        ]);
+    }
+
     public function test_customers_cannot_sync_supplier_services(): void
     {
         $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);

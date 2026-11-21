@@ -1,31 +1,45 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\\Http\\Controllers\\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Models\Service;
-use App\Services\SmmCenterClient;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
+use App\\Http\\Controllers\\Controller;
+use App\\Models\\Service;
+use App\\Services\\SmmCenterClient;
+use Illuminate\\Http\\RedirectResponse;
+use Illuminate\\Http\\Request;
+use Illuminate\\Support\\Facades\\DB;
+use Illuminate\\View\\View;
 use Throwable;
 
 class ServiceController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+        ]);
+        $search = trim($filters['search'] ?? '');
+
+        $query = Service::query()->latest();
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('platform', 'like', '%'.$search.'%')
+                    ->orWhere('category', 'like', '%'.$search.'%')
+                    ->orWhere('provider_service_id', 'like', '%'.$search.'%');
+            });
+        }
+
         return view('admin.services.index', [
-            'services' => Service::query()->latest()->paginate(20),
+            'services' => $query->paginate(20)->withQueryString(),
             'providerServiceCount' => Service::query()->where('provider', 'smm_center')->count(),
+            'search' => $search,
         ]);
     }
 
     public function syncSmmCenter(SmmCenterClient $client): RedirectResponse
     {
         try {
-            // Read the account currency once; SMM Center examples show USD, but use
-            // the actual account response rather than assuming a currency.
             $balance = $client->balance();
             $currency = strtoupper((string) ($balance['currency'] ?? ''));
 
@@ -65,8 +79,6 @@ class ServiceController extends Controller
                     ]);
 
                     if (!$service->exists) {
-                        // Imported supplier rates are in the supplier's currency.
-                        // Never guess an NGN selling price or publish a new service.
                         $service->price_per_1000 = '0.00';
                     }
 

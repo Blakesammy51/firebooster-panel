@@ -1,4 +1,4 @@
-@php($tracking = $order->customer_tracking)
+@php($tracking = $order->getAttribute('customer_tracking') ?? ['steps' => ['Order placed', 'Review', 'Processing', 'Completed'], 'active_step' => 1, 'message' => 'Your order has been received. Check back here for the latest status update.', 'delivered' => null, 'remaining' => null, 'show_progress' => false])
 <section class="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-3" aria-label="Order progress">
     <div class="grid grid-cols-4 gap-2">
         @foreach ($tracking['steps'] as $index => $step)

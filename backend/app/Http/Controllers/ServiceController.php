@@ -105,6 +105,7 @@ class ServiceController extends Controller
             'services' => $servicesQuery->orderBy('platform')->orderBy('name')->paginate(15)->withQueryString(),
             'wallet' => $wallet,
             'platforms' => $platforms,
+            'platformMap' => $platformMap,
             'categories' => $categories,
             'selectedPlatform' => $selectedPlatform,
             'selectedCategory' => $selectedCategory,

@@ -34,5 +34,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::put('/services/{service}', [AdminServiceController::class, 'update'])->name('services.update');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::post('/orders/{order}/submit-to-provider', [AdminOrderController::class, 'submitToProvider'])->name('orders.submit-to-provider');
+    Route::post('/orders/{order}/refresh-provider-status', [AdminOrderController::class, 'refreshProviderStatus'])->name('orders.refresh-provider-status');
     Route::patch('/orders/{order}', [AdminOrderController::class, 'updateStatus'])->name('orders.update');
 });

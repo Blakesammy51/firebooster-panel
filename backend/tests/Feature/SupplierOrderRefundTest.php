@@ -1,14 +1,14 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\\Feature;
 
-use App\Models\Order;
-use App\Models\Service;
-use App\Models\User;
-use App\Models\Wallet;
-use App\Models\WalletTransaction;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use App\\Models\\Order;
+use App\\Models\\Service;
+use App\\Models\\User;
+use App\\Models\\Wallet;
+use App\\Models\\WalletTransaction;
+use Illuminate\\Foundation\\Testing\\RefreshDatabase;
+use Tests\\TestCase;
 
 class SupplierOrderRefundTest extends TestCase
 {
@@ -137,5 +137,45 @@ class SupplierOrderRefundTest extends TestCase
             ->assertForbidden();
 
         $this->assertDatabaseHas('wallets', ['user_id' => $order->user_id, 'balance_kobo' => 500]);
+    }
+
+    public function test_customer_sees_only_their_own_completed_order_refunds(): void
+    {
+        $order = $this->makeRefundableOrder();
+        $customer = User::query()->findOrFail($order->user_id);
+        $wallet = Wallet::query()->where('user_id', $customer->id)->firstOrFail();
+
+        WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $customer->id,
+            'type' => 'order_refund',
+            'amount_kobo' => 40,
+            'currency' => 'NGN',
+            'status' => 'completed',
+            'reference' => 'ORDER-' . $order->id . '-REFUND',
+            'description' => 'Refund for order #' . $order->id,
+        ]);
+
+        $otherUser = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $otherWallet = Wallet::query()->create(['user_id' => $otherUser->id, 'balance_kobo' => 0, 'currency' => 'NGN']);
+        WalletTransaction::query()->create([
+            'wallet_id' => $otherWallet->id,
+            'user_id' => $otherUser->id,
+            'type' => 'order_refund',
+            'amount_kobo' => 99,
+            'currency' => 'NGN',
+            'status' => 'completed',
+            'reference' => 'ORDER-999-REFUND',
+            'description' => 'Another customer refund',
+        ]);
+
+        $this->actingAs($customer)
+            ->get(route('wallet.index'))
+            ->assertOk()
+            ->assertSee('Order refund history')
+            ->assertSee('+₦0.40')
+            ->assertSee('Refund for order #' . $order->id)
+            ->assertDontSee('Another customer refund')
+            ->assertDontSee('+₦0.99');
     }
 }

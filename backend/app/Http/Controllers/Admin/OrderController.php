@@ -78,6 +78,56 @@ class OrderController extends Controller
         }
     }
 
+    public function refreshProviderStatus(Order $order, SmmCenterClient $client): RedirectResponse
+    {
+        if (!$order->provider_order_id || !is_numeric($order->provider_order_id)) {
+            return back()->withErrors(['provider' => 'This order has no confirmed supplier order ID to refresh.']);
+        }
+
+        if ($order->service()->value('provider') !== 'smm_center') {
+            return back()->withErrors(['provider' => 'This order is not linked to SMM Center.']);
+        }
+
+        try {
+            $data = $client->orderStatus((int) $order->provider_order_id);
+            $providerStatus = trim((string) $data['status']);
+            $normalized = strtolower($providerStatus);
+
+            $updates = ['provider_status' => $providerStatus];
+
+            if (isset($data['charge']) && is_numeric($data['charge'])) {
+                $updates['provider_charge'] = $data['charge'];
+            }
+            if (isset($data['currency']) && is_string($data['currency'])) {
+                $updates['provider_currency'] = strtoupper($data['currency']);
+            }
+            if (isset($data['start_count']) && is_numeric($data['start_count'])) {
+                $updates['provider_start_count'] = max(0, (int) $data['start_count']);
+            }
+            if (isset($data['remains']) && is_numeric($data['remains'])) {
+                $updates['provider_remains'] = max(0, (int) $data['remains']);
+            }
+
+            if ($normalized === 'completed') {
+                $updates['status'] = 'completed';
+            } elseif (in_array($normalized, ['canceled', 'cancelled'], true)) {
+                $updates['status'] = 'cancelled';
+            } elseif (in_array($normalized, ['partial', 'failed'], true)) {
+                $updates['status'] = 'failed';
+            } else {
+                $updates['status'] = 'processing';
+            }
+
+            $order->update($updates);
+
+            return back()->with('status', 'Supplier status refreshed for order #' . $order->id . ': ' . $providerStatus);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->withErrors(['provider' => 'Could not refresh this supplier status. The existing order status was left unchanged.']);
+        }
+    }
+
     public function updateStatus(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([

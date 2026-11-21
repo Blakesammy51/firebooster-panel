@@ -187,7 +187,7 @@ class WalletDepositController extends Controller
                 && (int) ($metadata['wallet_transaction_id'] ?? 0) === (int) $transaction->id;
 
             if (!$valid) {
-                throw new \\RuntimeException('Paystack failed transaction details did not match the pending wallet deposit.');
+                throw new \RuntimeException('Paystack failed transaction details did not match the pending wallet deposit.');
             }
 
             $transaction->update([

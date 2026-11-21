@@ -148,7 +148,7 @@ class OrderController extends Controller
     public function refundToWallet(Request $request, Order $order): RedirectResponse
     {
         $data = $request->validate([
-            'refund_amount' => ['nullable', 'required_if:status,partial', 'numeric', 'gt:0', 'decimal:0,2'],
+            'refund_amount' => ['nullable', 'numeric', 'gt:0', 'decimal:0,2'],
         ]);
 
         try {

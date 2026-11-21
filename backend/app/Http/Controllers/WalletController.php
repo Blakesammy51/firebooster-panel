@@ -1,11 +1,11 @@
 <?php
 
-namespace App\\Http\\Controllers;
+namespace App\Http\Controllers;
 
-use App\\Models\\Wallet;
-use App\\Models\\WalletTransaction;
-use Illuminate\\Http\\Request;
-use Illuminate\\View\\View;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class WalletController extends Controller
 {

@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::post('/dashboard/supplier-balance/refresh', [DashboardController::class, 'refreshSupplierBalance'])->name('dashboard.supplier-balance.refresh');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
     Route::post('/services/smm-center/sync', [AdminServiceController::class, 'syncSmmCenter'])->name('services.smm-center.sync');

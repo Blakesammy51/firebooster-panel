@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\SmmCenterClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class OrderController extends Controller
 {
@@ -67,7 +69,7 @@ class OrderController extends Controller
             $order->refresh();
             $order->update([
                 'provider_status' => 'submission_failed_review_required',
-                'notes' => trim(($order->notes ? $order->notes . "\\n" : '') . 'Provider submission could not be confirmed. Check the SMM Center dashboard before taking any further action.'),
+                'notes' => trim(($order->notes ? $order->notes . "\n" : '') . 'Provider submission could not be confirmed. Check the SMM Center dashboard before taking any further action.'),
             ]);
 
             report($exception);

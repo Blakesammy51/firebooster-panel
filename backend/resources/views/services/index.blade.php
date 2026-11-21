@@ -128,8 +128,9 @@ const stickyTotal = document.getElementById('sticky-order-total');
 const stickyBalance = document.getElementById('sticky-balance-after');
 const stickyFeedback = document.getElementById('sticky-order-feedback');
 const stickySubmit = document.getElementById('sticky-submit');
+let activeOrderForm = document.querySelector('.order-form');
 
-document.querySelectorAll('.order-form').forEach((form) => {
+ document.querySelectorAll('.order-form').forEach((form) => {
     const quantity = form.querySelector('.quantity-input');
     const total = form.querySelector('.order-total');
     const balanceAfter = form.querySelector('.balance-after');
@@ -138,12 +139,13 @@ document.querySelectorAll('.order-form').forEach((form) => {
     const walletKobo = Number.parseInt(form.getAttribute('data-wallet-kobo'), 10);
     const money = (kobo) => '₦' + (kobo / 100).toFixed(2);
     const activateForm = () => {
+        activeOrderForm = form;
         if (stickyName) stickyName.textContent = form.getAttribute('data-service-name') || 'Selected service';
         if (stickySubmit) stickySubmit.setAttribute('form', form.id);
     };
     const updateEstimate = () => {
         const amount = Number(quantity.value);
-        activateForm();
+        if (document.activeElement === quantity) activateForm();
         if (!Number.isSafeInteger(amount) || !Number.isFinite(pricePer1000) || !Number.isFinite(walletKobo) || amount < Number(quantity.min) || amount > Number(quantity.max)) {
             total.textContent = '—'; balanceAfter.textContent = '—';
             feedback.textContent = 'Enter a quantity within the allowed limits.';
@@ -161,13 +163,15 @@ document.querySelectorAll('.order-form').forEach((form) => {
         balanceAfter.className = remainingKobo < 0 ? 'balance-after text-red-300' : 'balance-after text-emerald-300';
         feedback.textContent = remainingKobo < 0 ? 'Your wallet balance is too low for this order.' : 'Estimated amount only. The server recalculates the final charge before payment.';
         feedback.className = remainingKobo < 0 ? 'order-feedback mt-3 text-xs text-red-300' : 'order-feedback mt-3 text-xs text-slate-400';
-        if (stickyTotal) stickyTotal.textContent = money(totalKobo);
-        if (stickyBalance) stickyBalance.textContent = money(remainingKobo);
-        if (stickyBalance) stickyBalance.className = remainingKobo < 0 ? 'text-red-300' : 'text-emerald-300';
-        if (stickyFeedback) stickyFeedback.textContent = remainingKobo < 0 ? 'Insufficient wallet balance for this quantity.' : 'Final charge is recalculated securely by the server.';
-        if (stickySubmit) stickySubmit.disabled = remainingKobo < 0;
+        if (activeOrderForm === form) {
+            if (stickyTotal) stickyTotal.textContent = money(totalKobo);
+            if (stickyBalance) stickyBalance.textContent = money(remainingKobo);
+            if (stickyBalance) stickyBalance.className = remainingKobo < 0 ? 'text-red-300' : 'text-emerald-300';
+            if (stickyFeedback) stickyFeedback.textContent = remainingKobo < 0 ? 'Insufficient wallet balance for this quantity.' : 'Final charge is recalculated securely by the server.';
+            if (stickySubmit) stickySubmit.disabled = remainingKobo < 0;
+        }
     };
-    form.addEventListener('focusin', activateForm);
+    form.addEventListener('focusin', () => { activateForm(); updateEstimate(); });
     quantity.addEventListener('input', updateEstimate);
     updateEstimate();
 });

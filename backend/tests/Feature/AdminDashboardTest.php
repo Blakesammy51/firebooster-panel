@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\User;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Tests\\TestCase;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class AdminDashboardTest extends TestCase
 {
@@ -32,7 +32,7 @@ class AdminDashboardTest extends TestCase
             ->assertSee('Admin dashboard')
             ->assertSee('Total accounts')
             ->assertSee('Quick actions')
-            ->assertSee('Paystack &amp; wallet')
+            ->assertSee('Paystack & wallet')
             ->assertSee('SMM Center fulfilment')
             ->assertSee('Refund controls')
             ->assertDontSee('No payment is collected')

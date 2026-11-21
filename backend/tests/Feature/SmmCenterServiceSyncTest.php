@@ -195,10 +195,39 @@ class SmmCenterServiceSyncTest extends TestCase
             'is_active' => false,
         ]);
 
+        $supplierIdDecoy = Service::query()->create([
+            'name' => 'Unrelated supplier ID substring match',
+            'platform' => 'TikTok',
+            'category' => 'TikTok',
+            'provider' => 'smm_center',
+            'provider_service_id' => '13148',
+            'description' => 'This must not match an exact #3148 search.',
+            'price_per_1000' => '0.00',
+            'minimum_quantity' => 1,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+        $localIdDecoy = Service::query()->create([
+            'name' => 'Unrelated local ID substring match',
+            'platform' => 'TikTok',
+            'category' => 'TikTok',
+            'provider' => 'smm_center',
+            'provider_service_id' => '9'.$service->id,
+            'description' => 'This must not match an exact local ID search.',
+            'price_per_1000' => '0.00',
+            'minimum_quantity' => 1,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+
         $this->actingAs($admin)->get(route('admin.services.index', ['search' => '#3148']))
-            ->assertOk()->assertSee('Imported Instagram Followers');
+            ->assertOk()
+            ->assertSee('Imported Instagram Followers')
+            ->assertDontSee($supplierIdDecoy->name);
         $this->actingAs($admin)->get(route('admin.services.index', ['search' => '#'.$service->id]))
-            ->assertOk()->assertSee('Imported Instagram Followers');
+            ->assertOk()
+            ->assertSee('Imported Instagram Followers')
+            ->assertDontSee($localIdDecoy->name);
     }
 
     public function test_customers_cannot_search_admin_service_catalogue(): void

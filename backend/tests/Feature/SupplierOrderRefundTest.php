@@ -1,14 +1,14 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Models\\Order;
-use App\\Models\\Service;
-use App\\Models\\User;
-use App\\Models\\Wallet;
-use App\\Models\\WalletTransaction;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Tests\\TestCase;
+use App\Models\Order;
+use App\Models\Service;
+use App\Models\User;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class SupplierOrderRefundTest extends TestCase
 {

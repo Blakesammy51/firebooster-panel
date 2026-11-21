@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\WalletTransaction;
 use App\Services\SmmCenterClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,6 +35,20 @@ class OrderController extends Controller
 
         if (!in_array($order->status, ['pending', 'processing'], true)) {
             return back()->withErrors(['provider' => 'Only pending orders can be submitted to the provider.']);
+        }
+
+        // A local order status alone is not proof of payment. Require the completed
+        // wallet debit created atomically with customer order placement.
+        $paymentConfirmed = WalletTransaction::query()
+            ->where('user_id', $order->user_id)
+            ->where('type', 'order_payment')
+            ->where('status', 'completed')
+            ->where('currency', 'NGN')
+            ->where('reference', 'ORDER-' . $order->id)
+            ->exists();
+
+        if (!$paymentConfirmed) {
+            return back()->withErrors(['provider' => 'This order has no confirmed completed wallet payment. Provider submission is blocked.']);
         }
 
         // Claim the order atomically before making the external request. This prevents

@@ -4,9 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Service;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -29,34 +33,87 @@ class OrderController extends Controller
             'quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
         ]);
 
-        $service = Service::query()
-            ->whereKey($validated['service_id'])
-            ->where('is_active', true)
-            ->firstOrFail();
-
-        abort_unless(
-            $validated['quantity'] >= $service->minimum_quantity
-                && $validated['quantity'] <= $service->maximum_quantity,
-            422,
-            'The quantity is outside this service’s allowed range.'
+        $user = $request->user();
+        $wallet = Wallet::query()->firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance_kobo' => 0, 'currency' => 'NGN']
         );
 
-        // Price is calculated on the server; browser-submitted prices are never accepted.
-        $unitPrice = (float) $service->price_per_1000;
-        $totalPrice = round(($unitPrice * $validated['quantity']) / 1000, 2);
+        try {
+            $order = DB::transaction(function () use ($validated, $user, $wallet) {
+                $service = Service::query()
+                    ->whereKey($validated['service_id'])
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->first();
 
-        Order::query()->create([
-            'user_id' => $request->user()->id,
-            'service_id' => $service->id,
-            'target_url' => $validated['target_url'],
-            'quantity' => $validated['quantity'],
-            'unit_price' => $unitPrice,
-            'total_price' => $totalPrice,
-            'status' => 'pending',
-            'notes' => 'Awaiting payment and manual review. Not submitted to a provider.',
-        ]);
+                if (!$service) {
+                    throw ValidationException::withMessages([
+                        'service_id' => 'This service is no longer available.',
+                    ]);
+                }
+
+                $quantity = (int) $validated['quantity'];
+                if ($quantity < $service->minimum_quantity || $quantity > $service->maximum_quantity) {
+                    throw ValidationException::withMessages([
+                        'quantity' => 'The quantity is outside this service’s allowed range.',
+                    ]);
+                }
+
+                // Store and calculate money in kobo to avoid floating-point wallet arithmetic.
+                $unitPriceKobo = (int) round(((float) $service->price_per_1000) * 100);
+                $totalKobo = intdiv(($unitPriceKobo * $quantity) + 500, 1000);
+
+                if ($totalKobo < 1) {
+                    throw ValidationException::withMessages([
+                        'service_id' => 'This service does not have a payable price yet.',
+                    ]);
+                }
+
+                $lockedWallet = Wallet::query()->lockForUpdate()->findOrFail($wallet->id);
+                if ($lockedWallet->balance_kobo < $totalKobo) {
+                    throw ValidationException::withMessages([
+                        'wallet' => 'Insufficient wallet balance. Please add funds before placing this order.',
+                    ]);
+                }
+
+                $order = Order::query()->create([
+                    'user_id' => $user->id,
+                    'service_id' => $service->id,
+                    'target_url' => $validated['target_url'],
+                    'quantity' => $quantity,
+                    'unit_price' => $service->price_per_1000,
+                    'total_price' => number_format($totalKobo / 100, 2, '.', ''),
+                    'status' => 'pending',
+                    'notes' => 'Paid from wallet. Awaiting manual review; not submitted to a provider.',
+                ]);
+
+                $lockedWallet->balance_kobo -= $totalKobo;
+                $lockedWallet->save();
+
+                WalletTransaction::query()->create([
+                    'wallet_id' => $lockedWallet->id,
+                    'user_id' => $user->id,
+                    'type' => 'order_payment',
+                    'amount_kobo' => $totalKobo,
+                    'currency' => 'NGN',
+                    'status' => 'completed',
+                    'reference' => 'ORDER-' . $order->id,
+                    'description' => 'Wallet payment for order #' . $order->id,
+                    'metadata' => [
+                        'order_id' => $order->id,
+                        'service_id' => $service->id,
+                        'quantity' => $quantity,
+                    ],
+                ]);
+
+                return $order;
+            });
+        } catch (ValidationException $exception) {
+            throw $exception;
+        }
 
         return redirect()->route('orders.index')
-            ->with('status', 'Order request saved. It has not been paid for or sent to a provider.');
+            ->with('status', 'Order #' . $order->id . ' placed and paid from your wallet. It is awaiting manual review and has not been sent to a provider.');
     }
 }

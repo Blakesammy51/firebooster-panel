@@ -95,7 +95,7 @@ class SmmCenterOrderApiTest extends TestCase
     {
         config(['services.smm_center.api_key' => 'test-provider-key']);
 
-        $this->expectException(\\RuntimeException::class);
+        $this->expectException(\RuntimeException::class);
 
         app(SmmCenterClient::class)->orderStatuses(range(1, 101));
     }

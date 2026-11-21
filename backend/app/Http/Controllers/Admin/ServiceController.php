@@ -17,10 +17,17 @@ class ServiceController extends Controller
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', 'in:all,active,inactive'],
         ]);
         $search = trim($filters['search'] ?? '');
+        $status = $filters['status'] ?? 'all';
 
         $query = Service::query()->latest();
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
                 $builder->where('name', 'like', '%'.$search.'%')
@@ -33,7 +40,10 @@ class ServiceController extends Controller
         return view('admin.services.index', [
             'services' => $query->paginate(20)->withQueryString(),
             'providerServiceCount' => Service::query()->where('provider', 'smm_center')->count(),
+            'activeServiceCount' => Service::query()->where('is_active', true)->count(),
+            'inactiveServiceCount' => Service::query()->where('is_active', false)->count(),
             'search' => $search,
+            'status' => $status,
         ]);
     }
 

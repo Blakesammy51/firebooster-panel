@@ -85,6 +85,11 @@ class SmmCenterOrderSubmissionTest extends TestCase
             'status' => 'processing',
         ]);
 
+        $submittedOrder = $order->fresh();
+        $this->assertStringContainsString('Paid from wallet.', $submittedOrder->notes);
+        $this->assertStringContainsString('Submitted to SMM Center. Provider order ID: 7654321', $submittedOrder->notes);
+        $this->assertStringNotContainsString('not submitted to a provider', $submittedOrder->notes);
+
         Http::assertSentCount(1);
         Http::assertSent(fn ($request) => $request['action'] === 'add'
             && $request['service'] == 32748
@@ -264,6 +269,24 @@ class SmmCenterOrderSubmissionTest extends TestCase
             'id' => $order->id,
             'status' => 'partial',
         ]);
+    }
+
+    public function test_admin_order_page_hides_legacy_manual_review_note_after_supplier_submission(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update([
+            'provider_order_id' => '7654321',
+            'provider_status' => 'Completed',
+            'status' => 'completed',
+            'notes' => "Paid from wallet. Awaiting manual review; not submitted to a provider.\\nSubmitted to SMM Center. Provider order ID: 7654321",
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertSee('Submitted to SMM Center. Provider order ID: 7654321')
+            ->assertDontSee('not submitted to a provider');
     }
 
     public function test_admin_order_page_does_not_compare_usd_supplier_cost_to_ngn_sale(): void

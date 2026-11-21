@@ -8,7 +8,7 @@ use RuntimeException;
 
 class SmmCenterClient
 {
-    private function request(): PendingRequest
+    private function request(bool $retry = true): PendingRequest
     {
         $key = (string) config('services.smm_center.api_key');
 
@@ -16,17 +16,18 @@ class SmmCenterClient
             throw new RuntimeException('SMM Center API key is not configured on the server.');
         }
 
-        return Http::asForm()
+        $request = Http::asForm()
             ->acceptJson()
             ->timeout(20)
-            ->retry(2, 300)
             ->baseUrl(rtrim((string) config('services.smm_center.base_url'), '/'))
             ->withOptions(['connect_timeout' => 10]);
+
+        return $retry ? $request->retry(2, 300) : $request;
     }
 
-    private function call(array $payload): array
+    private function call(array $payload, bool $retry = true): array
     {
-        $response = $this->request()->post('/api/v2', [
+        $response = $this->request($retry)->post('/api/v2', [
             'key' => config('services.smm_center.api_key'),
             ...$payload,
         ]);
@@ -75,7 +76,7 @@ class SmmCenterClient
             'service' => $serviceId,
             'link' => $targetUrl,
             'quantity' => $quantity,
-        ]);
+        ], false);
 
         if (!isset($data['order']) || !is_numeric($data['order']) || (int) $data['order'] < 1) {
             throw new RuntimeException('SMM Center did not return a valid provider order ID.');

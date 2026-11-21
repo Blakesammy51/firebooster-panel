@@ -56,6 +56,7 @@
 <div>
 <h2 class="text-xl font-semibold">Transaction history</h2>
 <p class="mt-1 text-sm text-slate-400">Deposits, service payments, and completed refunds in one place.</p>
+<p class="mt-2 text-xs text-emerald-300">Order refund history is included below with your other wallet transactions.</p>
 </div>
 <span class="text-xs text-slate-500">Latest first</span>
 </div>

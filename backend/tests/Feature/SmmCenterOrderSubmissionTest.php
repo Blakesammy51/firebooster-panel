@@ -180,6 +180,40 @@ class SmmCenterOrderSubmissionTest extends TestCase
             && $request['order'] == 7654321);
     }
 
+    public function test_admin_order_page_does_not_compare_usd_supplier_cost_to_ngn_sale(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update([
+            'provider_order_id' => '7654321',
+            'provider_charge' => '0.180000',
+            'provider_currency' => 'USD',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertSee('0.180000 USD')
+            ->assertSee('Margin not calculated')
+            ->assertSee('verified exchange-rate snapshot is required');
+    }
+
+    public function test_admin_order_page_shows_gross_difference_only_for_ngn_supplier_cost(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update([
+            'provider_order_id' => '7654321',
+            'provider_charge' => '0.40',
+            'provider_currency' => 'NGN',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertSee('Gross difference before payment fees and other costs: ₦0.60');
+    }
+
     public function test_customers_cannot_refresh_supplier_status(): void
     {
         Http::fake();

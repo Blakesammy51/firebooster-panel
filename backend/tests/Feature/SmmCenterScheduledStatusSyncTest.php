@@ -134,7 +134,7 @@ class SmmCenterScheduledStatusSyncTest extends TestCase
         Http::fake(['smm-center.com/api/v2' => Http::response([])]);
 
         $this->artisan('smm-center:sync-order-statuses')
-            ->expectsOutputToContain('0 updated, 1 skipped, 0 failed batches')
+            ->expectsOutputToContain('0 updated, 0 skipped, 1 failed batches')
             ->assertSuccessful();
 
         $this->assertDatabaseHas('orders', [

@@ -16,10 +16,34 @@ use Throwable;
 
 class OrderController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', 'in:all,pending,awaiting_payment,processing,partial,completed,cancelled,failed'],
+        ]);
+        $search = trim(ltrim($filters['search'] ?? '', '#'));
+        $status = $filters['status'] ?? 'all';
+
+        $query = Order::query()->with(['user', 'service'])->latest();
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                if (ctype_digit($search)) {
+                    $builder->orWhere('id', (int) $search);
+                }
+                $builder->orWhere('provider_order_id', 'like', '%'.$search.'%')
+                    ->orWhereHas('user', fn ($user) => $user->where('email', 'like', '%'.$search.'%'))
+                    ->orWhereHas('service', fn ($service) => $service->where('name', 'like', '%'.$search.'%'));
+            });
+        }
+
         return view('admin.orders.index', [
-            'orders' => Order::query()->with(['user', 'service'])->latest()->paginate(25),
+            'orders' => $query->paginate(20)->withQueryString(),
+            'search' => $filters['search'] ?? '',
+            'status' => $status,
         ]);
     }
 

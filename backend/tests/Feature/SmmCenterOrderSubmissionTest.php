@@ -93,6 +93,63 @@ class SmmCenterOrderSubmissionTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_admin_can_refresh_supplier_status_and_update_order_progress(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+        Http::fake([
+            'smm-center.com/api/v2' => Http::response([
+                'charge' => '0.18',
+                'start_count' => '1200',
+                'status' => 'Completed',
+                'remains' => '0',
+                'currency' => 'USD',
+            ]),
+        ]);
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update([
+            'provider_order_id' => '7654321',
+            'provider_status' => 'In progress',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.refresh-provider-status', $order))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'provider_order_id' => '7654321',
+            'provider_status' => 'Completed',
+            'provider_charge' => '0.180000',
+            'provider_currency' => 'USD',
+            'provider_start_count' => 1200,
+            'provider_remains' => 0,
+            'status' => 'completed',
+        ]);
+
+        Http::assertSent(fn ($request) => $request['action'] === 'status'
+            && $request['order'] == 7654321);
+    }
+
+    public function test_customers_cannot_refresh_supplier_status(): void
+    {
+        Http::fake();
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update(['provider_order_id' => '7654321']);
+
+        $this->actingAs($customer)
+            ->post(route('admin.orders.refresh-provider-status', $order))
+            ->assertForbidden();
+
+        Http::assertNothingSent();
+    }
+
     public function test_customers_cannot_submit_orders_to_the_provider(): void
     {
         Http::fake();

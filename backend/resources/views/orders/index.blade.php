@@ -57,6 +57,7 @@
                         <div><p class="text-xs text-slate-500">Date</p><p class="mt-1">{{ $order->created_at->format('d M Y') }}</p></div>
                     </div>
                     <p class="mt-3 text-xs text-slate-500">Paid from wallet</p>
+                    @include('orders._tracking', ['order' => $order])
                 </article>
             @endforeach
         </div>
@@ -84,6 +85,9 @@
                             @endif
                         </td>
                         <td class="p-4">{{ $order->created_at->format('d M Y') }}</td>
+                    </tr>
+                    <tr class="border-t border-slate-800 bg-slate-950/40">
+                        <td colspan="7" class="px-4 pb-4">@include('orders._tracking', ['order' => $order])</td>
                     </tr>
                 @endforeach
                 </tbody>

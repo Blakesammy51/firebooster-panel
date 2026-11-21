@@ -61,6 +61,7 @@ class WalletDepositController extends Controller
                 'metadata' => [
                     'user_id' => $user->id,
                     'wallet_transaction_id' => $transaction->id,
+                    'cancel_action' => route('wallet.deposit.cancel', ['reference' => $reference]),
                     'custom_fields' => [
                         ['display_name' => 'Wallet deposit', 'variable_name' => 'wallet_deposit', 'value' => 'Firebooster wallet'],
                     ],
@@ -100,19 +101,74 @@ class WalletDepositController extends Controller
         try {
             $data = $paystack->verify($reference);
 
-            if (($data['status'] ?? null) === 'failed') {
-                $this->markDepositFailed($data, $transaction->id);
+            if (in_array(($data['status'] ?? null), ['failed', 'abandoned'], true)) {
+                $this->markDepositUnsuccessful($data, $transaction->id);
 
                 return redirect()->route('wallet.index')->withErrors([
-                    'payment' => 'Paystack declined this payment. No money was added to your wallet.',
+                    'payment' => 'This Paystack payment was not completed. No money was added to your wallet.',
                 ]);
             }
 
-            $this->creditVerifiedDeposit($data, $transaction->id);
-            return redirect()->route('wallet.index')->with('status', 'Payment verification completed. Your wallet has been refreshed.');
+            if (($data['status'] ?? null) === 'success') {
+                $this->creditVerifiedDeposit($data, $transaction->id);
+
+                return redirect()->route('wallet.index')->with('status', 'Payment verification completed. Your wallet has been refreshed.');
+            }
+
+            return redirect()->route('wallet.index')->withErrors([
+                'payment' => 'Paystack has not completed this payment yet. Your wallet has not been credited.',
+            ]);
         } catch (Throwable $exception) {
             report($exception);
             return redirect()->route('wallet.index')->withErrors(['payment' => 'Payment is not confirmed yet. Your wallet will update after Paystack confirms it.']);
+        }
+    }
+
+
+    public function cancel(Request $request, PaystackGateway $paystack): RedirectResponse
+    {
+        $reference = (string) $request->query('reference', '');
+        if ($reference === '' || strlen($reference) > 120) {
+            return redirect()->route('wallet.index')->withErrors(['payment' => 'Payment reference is missing.']);
+        }
+
+        $transaction = WalletTransaction::query()
+            ->where('reference', $reference)
+            ->where('user_id', $request->user()->id)
+            ->where('type', 'deposit')
+            ->first();
+
+        if (!$transaction) {
+            return redirect()->route('wallet.index')->withErrors(['payment' => 'This deposit reference was not found.']);
+        }
+
+        try {
+            $data = $paystack->verify($reference);
+            $status = $data['status'] ?? null;
+
+            if (in_array($status, ['failed', 'abandoned'], true)) {
+                $this->markDepositUnsuccessful($data, $transaction->id);
+
+                return redirect()->route('wallet.index')->withErrors([
+                    'payment' => 'This Paystack payment was not completed. No money was added to your wallet.',
+                ]);
+            }
+
+            if ($status === 'success') {
+                $this->creditVerifiedDeposit($data, $transaction->id);
+
+                return redirect()->route('wallet.index')->with('status', 'Payment was completed and your wallet has been updated.');
+            }
+
+            return redirect()->route('wallet.index')->withErrors([
+                'payment' => 'Paystack has not completed this payment yet. Your wallet has not been credited.',
+            ]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return redirect()->route('wallet.index')->withErrors([
+                'payment' => 'We could not confirm the payment status yet. Your wallet has not been credited.',
+            ]);
         }
     }
 
@@ -154,7 +210,7 @@ class WalletDepositController extends Controller
 
         try {
             if ($eventName === 'charge.failed' && ($data['status'] ?? null) === 'failed') {
-                $this->markDepositFailed($data, $transaction->id);
+                $this->markDepositUnsuccessful($data, $transaction->id);
                 return response()->json(['received' => true]);
             }
 
@@ -169,17 +225,18 @@ class WalletDepositController extends Controller
         return response()->json(['received' => true]);
     }
 
-    private function markDepositFailed(array $data, int $transactionId): void
+    private function markDepositUnsuccessful(array $data, int $transactionId): void
     {
         DB::transaction(function () use ($data, $transactionId) {
             $transaction = WalletTransaction::query()->lockForUpdate()->findOrFail($transactionId);
+            $status = $data['status'] ?? null;
 
             if ($transaction->status !== 'pending') {
                 return;
             }
 
             $metadata = $data['metadata'] ?? [];
-            $valid = ($data['status'] ?? null) === 'failed'
+            $valid = in_array($status, ['failed', 'abandoned'], true)
                 && ($data['reference'] ?? null) === $transaction->reference
                 && (int) ($data['amount'] ?? 0) === (int) $transaction->amount_kobo
                 && ($data['currency'] ?? null) === 'NGN'
@@ -187,14 +244,15 @@ class WalletDepositController extends Controller
                 && (int) ($metadata['wallet_transaction_id'] ?? 0) === (int) $transaction->id;
 
             if (!$valid) {
-                throw new \RuntimeException('Paystack failed transaction details did not match the pending wallet deposit.');
+                throw new \RuntimeException('Paystack unsuccessful transaction details did not match the pending wallet deposit.');
             }
 
             $transaction->update([
-                'status' => 'failed',
+                'status' => $status,
                 'metadata' => array_merge((array) $transaction->metadata, [
                     'gateway' => 'paystack',
-                    'failure_confirmed_at' => now()->toISOString(),
+                    'terminal_confirmed_at' => now()->toISOString(),
+                    'gateway_response' => $data['gateway_response'] ?? null,
                 ]),
             ]);
         });

@@ -13,6 +13,37 @@ use Throwable;
 
 class ServiceController extends Controller
 {
+    private function normalizeSocialPlatform(string $name, string $category): string
+    {
+        $text = mb_strtolower($name.' '.$category);
+        $known = [
+            'Instagram' => '/instagram|\\big\\b/',
+            'Facebook' => '/facebook|\\bfb\\b/',
+            'Telegram' => '/telegram|\\btg\\b/',
+            'YouTube' => '/youtube|\\byt\\b/',
+            'TikTok' => '/tiktok|tik tok/',
+            'X (Twitter)' => '/twitter|\\bx\\s*(?:\\(|$)/',
+            'Threads' => '/threads/',
+            'WhatsApp' => '/whatsapp/',
+            'LinkedIn' => '/linkedin/',
+            'Snapchat' => '/snapchat/',
+            'Pinterest' => '/pinterest/',
+            'Reddit' => '/reddit/',
+            'Discord' => '/discord/',
+            'Twitch' => '/twitch/',
+            'Spotify' => '/spotify/',
+            'SoundCloud' => '/soundcloud/',
+        ];
+
+        foreach ($known as $platform => $pattern) {
+            if (preg_match($pattern, $text)) {
+                return $platform;
+            }
+        }
+
+        return mb_substr(trim($category), 0, 40);
+    }
+
     public function index(Request $request): View
     {
         $filters = $request->validate([
@@ -94,7 +125,7 @@ class ServiceController extends Controller
 
                     $service->fill([
                         'name' => $name,
-                        'platform' => mb_substr($category, 0, 40),
+                        'platform' => $this->normalizeSocialPlatform($name, $category),
                         'category' => $category,
                         'provider_type' => mb_substr((string) ($remote['type'] ?? 'Default'), 0, 120),
                         'provider_rate' => number_format($rate, 6, '.', ''),

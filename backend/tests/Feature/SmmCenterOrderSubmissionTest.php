@@ -180,6 +180,92 @@ class SmmCenterOrderSubmissionTest extends TestCase
             && $request['order'] == 7654321);
     }
 
+    public function test_partial_supplier_status_is_preserved_as_partial_locally(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+        Http::fake([
+            'smm-center.com/api/v2' => Http::response([
+                'charge' => '0.12',
+                'start_count' => '1200',
+                'status' => 'Partial',
+                'remains' => '40',
+                'currency' => 'USD',
+            ]),
+        ]);
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update([
+            'provider_order_id' => '7654321',
+            'provider_status' => 'In progress',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.refresh-provider-status', $order))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'provider_status' => 'Partial',
+            'provider_remains' => 40,
+            'status' => 'partial',
+        ]);
+    }
+
+    public function test_failed_supplier_status_maps_to_failed_locally(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+        Http::fake([
+            'smm-center.com/api/v2' => Http::response([
+                'status' => 'Failed',
+                'remains' => '200',
+            ]),
+        ]);
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update([
+            'provider_order_id' => '7654321',
+            'provider_status' => 'In progress',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.refresh-provider-status', $order))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'provider_status' => 'Failed',
+            'status' => 'failed',
+        ]);
+    }
+
+    public function test_admin_can_manually_set_partial_order_status(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+
+        $this->actingAs($admin)
+            ->patch(route('admin.orders.update', $order), [
+                'status' => 'partial',
+                'notes' => 'Supplier fulfilled part of the quantity.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'partial',
+        ]);
+    }
+
     public function test_admin_order_page_does_not_compare_usd_supplier_cost_to_ngn_sale(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);

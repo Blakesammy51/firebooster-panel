@@ -101,7 +101,8 @@ class CustomerOrderTrackingTest extends TestCase
             ->assertSee('Your order has been marked as completed.')
             ->assertSee('Completed');
 
-        $this->assertSame(4, substr_count($response->getContent(), 'bg-emerald-700 text-white'));
+        // The responsive view renders both mobile and desktop layouts; each has four completed steps.
+        $this->assertSame(8, substr_count($response->getContent(), 'bg-emerald-700 text-white'));
     }
 
 }

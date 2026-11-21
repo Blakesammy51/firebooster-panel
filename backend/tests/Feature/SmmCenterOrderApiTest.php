@@ -54,4 +54,49 @@ class SmmCenterOrderApiTest extends TestCase
 
         app(SmmCenterClient::class)->addOrder(0, 'not-a-url', 0);
     }
+
+    public function test_client_fetches_multiple_order_statuses_in_one_request(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+
+        Http::fake([
+            'smm-center.com/api/v2' => Http::response([
+                '7654321' => [
+                    'charge' => '0.90',
+                    'start_count' => '120',
+                    'status' => 'In progress',
+                    'remains' => '80',
+                    'currency' => 'USD',
+                ],
+                '7654322' => [
+                    'charge' => '0.45',
+                    'start_count' => '50',
+                    'status' => 'Completed',
+                    'remains' => '0',
+                    'currency' => 'USD',
+                ],
+            ]),
+        ]);
+
+        $statuses = app(SmmCenterClient::class)->orderStatuses([7654321, 7654322]);
+
+        $this->assertSame('In progress', $statuses['7654321']['status']);
+        $this->assertSame('Completed', $statuses['7654322']['status']);
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => $request['action'] === 'status'
+            && $request['orders'] === '7654321,7654322'
+            && $request['key'] === 'test-provider-key');
+    }
+
+    public function test_client_rejects_batches_larger_than_one_hundred_ids(): void
+    {
+        config(['services.smm_center.api_key' => 'test-provider-key']);
+
+        $this->expectException(\\RuntimeException::class);
+
+        app(SmmCenterClient::class)->orderStatuses(range(1, 101));
+    }
 }

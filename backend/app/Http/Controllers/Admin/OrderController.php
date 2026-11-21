@@ -191,7 +191,7 @@ class OrderController extends Controller
                 }
 
                 if (in_array($lockedOrder->status, ['cancelled', 'failed'], true)) {
-                    if ($lockedOrder->provider_remains === null || $lockedOrder->provider_remains < $lockedOrder->quantity) {
+                    if ($lockedOrder->provider_remains === null || $lockedOrder->provider_remains !== $lockedOrder->quantity) {
                         throw new \RuntimeException('Full refund is blocked because the supplier has not confirmed that the full quantity remains undelivered.');
                     }
                     $refundKobo = (int) $payment->amount_kobo;

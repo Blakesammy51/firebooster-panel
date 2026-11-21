@@ -17,8 +17,21 @@
 <div class="px-4 pb-4 sm:px-5"><a class="break-all text-sm text-violet-300 underline" href="{{ $order->target_url }}" target="_blank" rel="noopener noreferrer">Open target URL</a>
 @if ($order->service->provider === 'smm_center')
 @if ($order->provider_charge !== null && $order->provider_currency)
-<div class="mt-3 rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm"><p class="text-slate-300">Supplier charge: <strong>{{ number_format((float) $order->provider_charge,6) }} {{ strtoupper($order->provider_currency) }}</strong></p><p class="mt-1 text-slate-400">Customer sale: ₦{{ number_format((float) $order->total_price,2) }}</p>
-@if (strtoupper($order->provider_currency) === 'NGN')<p class="mt-1 text-emerald-300">Gross difference before payment fees and other costs: ₦{{ number_format((float) $order->total_price - (float) $order->provider_charge,2) }}</p>@else<p class="mt-1 text-amber-300">Margin not calculated: supplier charge is in {{ strtoupper($order->provider_currency) }}. A verified exchange-rate snapshot is required to compare it with the NGN sale.</p>@endif</div>@endif
+<div class="mt-3 rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+<p class="text-slate-300">Supplier charge: <strong>{{ number_format((float) $order->provider_charge,6) }} {{ strtoupper($order->provider_currency) }}</strong></p>
+<p class="mt-1 text-slate-400">Customer sale: ₦{{ number_format((float) $order->total_price,2) }}</p>
+@if (strtoupper($order->provider_currency) === 'NGN')
+<p class="mt-1 text-emerald-300">Gross difference before payment fees and other costs: ₦{{ number_format((float) $order->total_price - (float) $order->provider_charge,2) }}</p>
+@elseif (strtoupper($order->provider_currency) === 'USD' && $order->provider_fx_rate)
+@php($supplierCostNgn = (float) $order->provider_charge * (float) $order->provider_fx_rate)
+<p class="mt-1 text-slate-300">Recorded FX rate: ₦{{ number_format((float) $order->provider_fx_rate,4) }} per USD</p>
+<p class="mt-1 text-slate-400">Supplier cost estimate: ₦{{ number_format($supplierCostNgn,2) }}</p>
+<p class="mt-1 font-semibold {{ (float) $order->total_price - $supplierCostNgn >= 0 ? 'text-emerald-300' : 'text-rose-300' }}">Gross margin before payment fees and other costs: ₦{{ number_format((float) $order->total_price - $supplierCostNgn,2) }}</p>
+<p class="mt-1 text-xs text-slate-500">FX source: {{ $order->provider_fx_source }} · Snapshot: {{ $order->provider_fx_captured_at?->format('d M Y, H:i') }}</p>
+@else
+<p class="mt-1 text-amber-300">Margin not calculated: save a verified USD-to-NGN rate and its source below. Firebooster will not guess an exchange rate.</p>
+@endif
+</div>@endif
 <div class="mt-3 flex flex-wrap gap-2">
 @if ($order->provider_order_id)<form method="POST" action="{{ route('admin.orders.refresh-provider-status',$order) }}">@csrf<button class="rounded-lg border border-emerald-500 px-4 py-2 text-sm text-emerald-200">Refresh supplier status</button></form>
 @elseif (!$order->provider_status && in_array($order->status,['pending','processing'],true))<form method="POST" action="{{ route('admin.orders.submit-to-provider',$order) }}">@csrf<button class="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold">Submit to SMM Center</button></form>@endif
@@ -28,9 +41,14 @@
 @if ($order->status === 'partial')<label class="text-sm text-slate-300">Approved refund (NGN)<input name="refund_amount" type="number" min="0.01" step="0.01" required class="mt-1 block w-full rounded-lg bg-slate-900 p-2" placeholder="e.g. 0.40"></label><span class="text-xs text-amber-300">Review delivered quantity before approving.</span>@else<span class="text-xs text-amber-300">Full refund requires supplier confirmation that the full quantity remains undelivered.</span>@endif
 <button class="rounded-lg border border-amber-500 px-4 py-2 text-sm text-amber-200">Issue wallet refund</button></form>@endif
 @endif
-<form method="POST" action="{{ route('admin.orders.update',$order) }}" class="mt-4 grid gap-2 border-t border-slate-800 pt-4 sm:grid-cols-[190px_1fr_auto]">@csrf @method('PATCH')
+<form method="POST" action="{{ route('admin.orders.update',$order) }}" class="mt-4 grid gap-2 border-t border-slate-800 pt-4 sm:grid-cols-[150px_1fr_auto]">@csrf @method('PATCH')
 <select name="status" class="rounded-lg bg-slate-950 p-3">@foreach (['pending','awaiting_payment','processing','partial','completed','cancelled','failed'] as $s)<option value="{{ $s }}" @selected($order->status === $s)>{{ ucfirst(str_replace('_',' ',$s)) }}</option>@endforeach</select>
-<input name="notes" maxlength="2000" value="{{ $order->provider_order_id ? str_replace('Paid from wallet. Awaiting manual review; not submitted to a provider.', 'Paid from wallet.', $order->notes) : $order->notes }}" placeholder="Internal note" class="min-w-0 rounded-lg bg-slate-950 p-3"><button class="rounded-lg border border-violet-500 px-4 py-3">Save order</button></form>
+<input name="notes" maxlength="2000" value="{{ $order->provider_order_id ? str_replace('Paid from wallet. Awaiting manual review; not submitted to a provider.', 'Paid from wallet.', $order->notes) : $order->notes }}" placeholder="Internal note" class="min-w-0 rounded-lg bg-slate-950 p-3">
+@if (strtoupper((string) $order->provider_currency) === 'USD' && $order->provider_charge !== null)
+<label class="text-xs text-slate-400">Verified NGN per USD<input name="provider_fx_rate" type="number" min="0.0001" step="0.0001" value="{{ $order->provider_fx_rate }}" placeholder="e.g. 1500.0000" class="mt-1 w-full rounded-lg bg-slate-950 p-3"></label>
+<label class="text-xs text-slate-400">FX source / funding rate<input name="provider_fx_source" maxlength="160" value="{{ $order->provider_fx_source }}" placeholder="e.g. SMM Center top-up receipt" class="mt-1 w-full rounded-lg bg-slate-950 p-3"></label>
+@endif
+<button class="rounded-lg border border-violet-500 px-4 py-3">Save order</button></form>
 </div></article>
 @empty<p class="rounded-xl border border-slate-800 bg-slate-900 p-6 text-slate-400">No matching orders found.</p>@endforelse</div>
 <div class="mt-5">{{ $orders->links() }}</div><p class="mt-6 text-xs text-amber-300">Supplier submission is a separate admin action. If a submission cannot be confirmed, check the SMM Center dashboard before retrying. Duplicate submissions are blocked.</p>

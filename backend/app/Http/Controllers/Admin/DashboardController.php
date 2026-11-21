@@ -1,16 +1,14 @@
 <?php
 
-namespace App\\Http\\Controllers\\Admin;
+namespace App\Http\Controllers\Admin;
 
-use App\\Http\\Controllers\\Controller;
-use App\\Models\\Order;
-use App\\Models\\Service;
-use App\\Models\\User;
-use App\\Services\\SmmCenterClient;
-use Illuminate\\Http\\RedirectResponse;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\Log;
-use Illuminate\\View\\View;
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Service;
+use App\Models\User;
+use App\Services\SmmCenterClient;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use RuntimeException;
 use Throwable;
 
@@ -29,7 +27,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function refreshSupplierBalance(Request $request, SmmCenterClient $client): RedirectResponse
+    public function refreshSupplierBalance(SmmCenterClient $client): RedirectResponse
     {
         try {
             $balance = $client->balance();

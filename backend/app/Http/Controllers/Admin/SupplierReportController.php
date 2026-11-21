@@ -1,13 +1,12 @@
 <?php
 
-namespace App\\Http\\Controllers\\Admin;
+namespace App\Http\Controllers\Admin;
 
-use App\\Http\\Controllers\\Controller;
-use App\\Models\\Order;
-use App\\Models\\WalletTransaction;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Carbon;
-use Illuminate\\View\\View;
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\WalletTransaction;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class SupplierReportController extends Controller
 {

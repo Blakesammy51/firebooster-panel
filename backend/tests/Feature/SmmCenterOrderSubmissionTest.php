@@ -289,6 +289,61 @@ class SmmCenterOrderSubmissionTest extends TestCase
             ->assertDontSee('not submitted to a provider');
     }
 
+    public function test_admin_can_save_verified_usd_to_ngn_snapshot_and_view_gross_margin(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update([
+            'provider_order_id' => '7654321',
+            'provider_charge' => '0.180000',
+            'provider_currency' => 'USD',
+            'total_price' => '500.00',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.orders.update', $order), [
+                'status' => 'completed',
+                'notes' => 'Paid from wallet.',
+                'provider_fx_rate' => '1500.0000',
+                'provider_fx_source' => 'SMM Center top-up receipt',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $order->refresh();
+        $this->assertSame('1500.0000', $order->provider_fx_rate);
+        $this->assertSame('SMM Center top-up receipt', $order->provider_fx_source);
+        $this->assertNotNull($order->provider_fx_captured_at);
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertSee('Supplier cost estimate: ₦270.00')
+            ->assertSee('Gross margin before payment fees and other costs: ₦230.00')
+            ->assertSee('SMM Center top-up receipt');
+    }
+
+    public function test_fx_snapshot_requires_a_source(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeSupplierOrder();
+        $order->update([
+            'provider_order_id' => '7654321',
+            'provider_charge' => '0.180000',
+            'provider_currency' => 'USD',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.orders.update', $order), [
+                'status' => 'completed',
+                'provider_fx_rate' => '1500.0000',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('provider_fx_source');
+
+        $this->assertNull($order->fresh()->provider_fx_rate);
+    }
+
     public function test_admin_order_page_does_not_compare_usd_supplier_cost_to_ngn_sale(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);

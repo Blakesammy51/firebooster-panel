@@ -1,12 +1,15 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\\Http\\Controllers\\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Models\Service;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+use App\\Http\\Controllers\\Controller;
+use App\\Models\\Service;
+use App\\Services\\SmmCenterClient;
+use Illuminate\\Http\\RedirectResponse;
+use Illuminate\\Http\\Request;
+use Illuminate\\Support\\Facades\\DB;
+use Illuminate\\View\\View;
+use Throwable;
 
 class ServiceController extends Controller
 {
@@ -14,7 +17,80 @@ class ServiceController extends Controller
     {
         return view('admin.services.index', [
             'services' => Service::query()->latest()->paginate(20),
+            'providerServiceCount' => Service::query()->where('provider', 'smm_center')->count(),
         ]);
+    }
+
+    public function syncSmmCenter(SmmCenterClient $client): RedirectResponse
+    {
+        try {
+            // Read the account currency once; SMM Center examples show USD, but use
+            // the actual account response rather than assuming a currency.
+            $balance = $client->balance();
+            $currency = strtoupper((string) ($balance['currency'] ?? ''));
+
+            if (!preg_match('/^[A-Z]{3}$/', $currency)) {
+                return back()->withErrors(['provider' => 'SMM Center did not return a valid account currency.']);
+            }
+
+            $remoteServices = $client->services();
+            $imported = 0;
+
+            DB::transaction(function () use ($remoteServices, $currency, &$imported) {
+                foreach ($remoteServices as $remote) {
+                    if (!is_array($remote)
+                        || !isset($remote['service'], $remote['name'], $remote['category'], $remote['rate'], $remote['min'], $remote['max'])
+                        || !is_numeric($remote['service'])
+                        || !is_numeric($remote['rate'])
+                        || !is_numeric($remote['min'])
+                        || !is_numeric($remote['max'])) {
+                        continue;
+                    }
+
+                    $providerId = (string) $remote['service'];
+                    $name = mb_substr(trim((string) $remote['name']), 0, 255);
+                    $category = mb_substr(trim((string) $remote['category']), 0, 255);
+                    $minimum = (int) $remote['min'];
+                    $maximum = (int) $remote['max'];
+                    $rate = (float) $remote['rate'];
+
+                    if ($providerId === '' || $name === '' || $category === ''
+                        || $minimum < 1 || $maximum < $minimum || $rate < 0) {
+                        continue;
+                    }
+
+                    Service::query()->updateOrCreate(
+                        [
+                            'provider' => 'smm_center',
+                            'provider_service_id' => $providerId,
+                        ],
+                        [
+                            'name' => $name,
+                            'platform' => mb_substr($category, 0, 40),
+                            'category' => $category,
+                            'provider_type' => mb_substr((string) ($remote['type'] ?? 'Default'), 0, 120),
+                            'provider_rate' => number_format($rate, 6, '.', ''),
+                            'provider_currency' => $currency,
+                            'provider_refill' => (bool) ($remote['refill'] ?? false),
+                            'provider_cancel' => (bool) ($remote['cancel'] ?? false),
+                            'description' => 'Imported from SMM Center. Supplier category: '.$category,
+                            'minimum_quantity' => $minimum,
+                            'maximum_quantity' => $maximum,
+                            // New services remain unpublished until an admin sets a
+                            // NGN selling price and deliberately activates them.
+                        ]
+                    );
+
+                    $imported++;
+                }
+            });
+
+            return back()->with('status', $imported.' SMM Center services synchronized. Imported services remain inactive until you set their NGN selling prices and activate them.');
+        } catch (Throwable $exception) {
+            return back()->withErrors([
+                'provider' => 'SMM Center sync failed: '.$exception->getMessage(),
+            ]);
+        }
     }
 
     public function store(Request $request): RedirectResponse

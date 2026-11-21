@@ -29,6 +29,26 @@
 </form>
 <p class="mt-3 text-xs text-slate-500">Minimum ₦100.00. Maximum ₦1,000,000.00 per deposit.</p>
 </section>
+<section class="mt-8 rounded-2xl border border-emerald-800/60 bg-emerald-950/20 p-6">
+<h2 class="text-xl font-semibold text-emerald-200">Order refund history</h2>
+<p class="mt-2 text-sm text-slate-400">Completed refunds returned to your wallet appear here.</p>
+@if ($refundTransactions->isEmpty())
+<p class="mt-4 text-sm text-slate-400">No order refunds have been credited to your wallet yet.</p>
+@else
+<div class="mt-4 space-y-3">
+@foreach ($refundTransactions as $refund)
+<div class="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-900/70 pb-3">
+<div>
+<p class="font-medium text-emerald-200">Order refund · {{ ucfirst($refund->status) }}</p>
+<p class="text-xs text-slate-400">{{ $refund->description ?? ('Refund for ' . $refund->reference) }} · {{ $refund->created_at->format('M j, Y H:i') }}</p>
+</div>
+<p class="font-semibold text-emerald-300">+₦{{ number_format($refund->amount_kobo / 100, 2) }}</p>
+</div>
+@endforeach
+</div>
+<div class="mt-5">{{ $refundTransactions->links() }}</div>
+@endif
+</section>
 <section class="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
 <h2 class="text-xl font-semibold">Transaction history</h2>
 @if ($transactions->isEmpty())
@@ -39,7 +59,7 @@
 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
 <div><p class="font-medium">{{ str_replace('_', ' ', ucfirst($transaction->type)) }} · {{ ucfirst($transaction->status) }}</p>
 <p class="text-xs text-slate-400">{{ $transaction->description ?? $transaction->reference ?? 'Wallet transaction' }} · {{ $transaction->created_at->format('M j, Y H:i') }}</p></div>
-<p class="font-semibold">₦{{ number_format($transaction->amount_kobo / 100, 2) }}</p>
+<p class="font-semibold">{{ $transaction->type === 'order_refund' ? '+' : '' }}₦{{ number_format($transaction->amount_kobo / 100, 2) }}</p>
 </div>
 @endforeach
 </div>

@@ -32,7 +32,7 @@ class AdminDashboardTest extends TestCase
             ->assertSee('Admin dashboard')
             ->assertSee('Total accounts')
             ->assertSee('Quick actions')
-            ->assertSee('Paystack & wallet')
+            ->assertSeeText('Paystack & wallet')
             ->assertSee('SMM Center fulfilment')
             ->assertSee('Refund controls')
             ->assertDontSee('No payment is collected')

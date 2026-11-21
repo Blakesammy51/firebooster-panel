@@ -268,7 +268,19 @@ class OrderController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in(['pending', 'awaiting_payment', 'processing', 'partial', 'completed', 'cancelled', 'failed'])],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'provider_fx_rate' => ['nullable', 'numeric', 'gt:0', 'decimal:0,4'],
+            'provider_fx_source' => ['nullable', 'string', 'max:160', 'required_with:provider_fx_rate'],
         ]);
+
+        if (array_key_exists('provider_fx_rate', $data) && $data['provider_fx_rate'] !== null) {
+            if (strtoupper((string) $order->provider_currency) !== 'USD'
+                || $order->provider_charge === null) {
+                return back()->withErrors(['provider' => 'An FX snapshot can only be saved for an order with a recorded USD supplier charge.']);
+            }
+
+            $data['provider_fx_captured_at'] = now();
+            $data['provider_fx_source'] = trim($data['provider_fx_source']);
+        }
 
         $order->update($data);
 

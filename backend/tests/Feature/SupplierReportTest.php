@@ -66,7 +66,7 @@ class SupplierReportTest extends TestCase
                 'to' => now()->toDateString(),
             ]))
             ->assertOk()
-            ->assertSee('Supplier spending & order profit')
+            ->assertSee('Supplier spending &amp; order profit')
             ->assertSee('USD 0.020000')
             ->assertSee('₦5.00')
             ->assertSee('Verified funding receipt');

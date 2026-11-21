@@ -59,27 +59,30 @@ class ServiceController extends Controller
                         continue;
                     }
 
-                    Service::query()->updateOrCreate(
-                        [
-                            'provider' => 'smm_center',
-                            'provider_service_id' => $providerId,
-                        ],
-                        [
-                            'name' => $name,
-                            'platform' => mb_substr($category, 0, 40),
-                            'category' => $category,
-                            'provider_type' => mb_substr((string) ($remote['type'] ?? 'Default'), 0, 120),
-                            'provider_rate' => number_format($rate, 6, '.', ''),
-                            'provider_currency' => $currency,
-                            'provider_refill' => (bool) ($remote['refill'] ?? false),
-                            'provider_cancel' => (bool) ($remote['cancel'] ?? false),
-                            'description' => 'Imported from SMM Center. Supplier category: '.$category,
-                            'minimum_quantity' => $minimum,
-                            'maximum_quantity' => $maximum,
-                            // New services remain unpublished until an admin sets a
-                            // NGN selling price and deliberately activates them.
-                        ]
-                    );
+                    $service = Service::query()->firstOrNew([
+                        'provider' => 'smm_center',
+                        'provider_service_id' => $providerId,
+                    ]);
+
+                    if (!$service->exists) {
+                        // Imported supplier rates are in the supplier's currency.
+                        // Never guess an NGN selling price or publish a new service.
+                        $service->price_per_1000 = '0.00';
+                    }
+
+                    $service->fill([
+                        'name' => $name,
+                        'platform' => mb_substr($category, 0, 40),
+                        'category' => $category,
+                        'provider_type' => mb_substr((string) ($remote['type'] ?? 'Default'), 0, 120),
+                        'provider_rate' => number_format($rate, 6, '.', ''),
+                        'provider_currency' => $currency,
+                        'provider_refill' => filter_var($remote['refill'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                        'provider_cancel' => filter_var($remote['cancel'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                        'description' => 'Imported from SMM Center. Supplier category: '.$category,
+                        'minimum_quantity' => $minimum,
+                        'maximum_quantity' => $maximum,
+                    ])->save();
 
                     $imported++;
                 }

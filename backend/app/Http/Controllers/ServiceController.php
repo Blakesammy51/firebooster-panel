@@ -1,11 +1,11 @@
 <?php
 
-namespace App\\Http\\Controllers;
+namespace App\Http\Controllers;
 
-use App\\Models\\Service;
-use App\\Models\\Wallet;
-use Illuminate\\Http\\Request;
-use Illuminate\\View\\View;
+use App\Models\Service;
+use App\Models\Wallet;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ServiceController extends Controller
 {
@@ -19,12 +19,12 @@ class ServiceController extends Controller
         $text = mb_strtolower($label);
 
         $known = [
-            'Instagram' => '/instagram|\\big\\b/',
-            'Facebook' => '/facebook|\\bfb\\b/',
-            'Telegram' => '/telegram|\\btg\\b/',
-            'YouTube' => '/youtube|\\byoutube\\b|\\byt\\b/',
+            'Instagram' => '/instagram|\big\b/',
+            'Facebook' => '/facebook|\bfb\b/',
+            'Telegram' => '/telegram|\btg\b/',
+            'YouTube' => '/youtube|\byoutube\b|\byt\b/',
             'TikTok' => '/tiktok|tik tok/',
-            'X (Twitter)' => '/twitter|\\bx\\s*(?:\\(|$)/',
+            'X (Twitter)' => '/twitter|\bx\s*(?:\(|$)/',
             'Threads' => '/threads/',
             'WhatsApp' => '/whatsapp/',
             'LinkedIn' => '/linkedin/',

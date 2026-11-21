@@ -6,6 +6,17 @@
 <div class="space-y-4">@forelse ($orders as $order)<article class="rounded-xl border border-slate-800 bg-slate-900 p-5"><div class="flex flex-wrap justify-between gap-3"><div><h2 class="font-semibold">Order #{{ $order->id }} · {{ $order->service->name }}</h2><p class="mt-1 text-sm text-slate-400">{{ $order->user->email }} · {{ number_format($order->quantity) }} units · ₦{{ number_format((float) $order->total_price,2) }}</p><a class="mt-2 inline-block break-all text-sm text-violet-300 underline" href="{{ $order->target_url }}" target="_blank" rel="noopener noreferrer">{{ $order->target_url }}</a></div><span class="text-sm text-slate-300">{{ ucfirst(str_replace('_',' ',$order->status)) }}</span></div>
 @if ($order->service->provider === 'smm_center')
 <p class="mt-3 text-xs text-slate-400">Supplier: SMM Center · Provider order: {{ $order->provider_order_id ?? 'Not submitted' }} · Supplier status: {{ $order->provider_status ?? 'Not available' }}</p>
+@if ($order->provider_charge !== null && $order->provider_currency)
+<div class="mt-3 rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm">
+    <p class="text-slate-300">Recorded supplier charge: <strong>{{ number_format((float) $order->provider_charge, 6) }} {{ strtoupper($order->provider_currency) }}</strong></p>
+    <p class="mt-1 text-slate-400">Customer sale: ₦{{ number_format((float) $order->total_price, 2) }}</p>
+    @if (strtoupper($order->provider_currency) === 'NGN')
+        <p class="mt-1 text-emerald-300">Gross difference before payment fees and other costs: ₦{{ number_format((float) $order->total_price - (float) $order->provider_charge, 2) }}</p>
+    @else
+        <p class="mt-1 text-amber-300">Margin not calculated: supplier charge is in {{ strtoupper($order->provider_currency) }}. A verified exchange-rate snapshot is required to compare it with the NGN sale.</p>
+    @endif
+</div>
+@endif
 @if ($order->provider_order_id)
 <form method="POST" action="{{ route('admin.orders.refresh-provider-status', $order) }}" class="mt-3">@csrf<button class="rounded-lg border border-emerald-500 px-4 py-2 text-emerald-200">Refresh supplier status</button></form>
 @endif

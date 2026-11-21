@@ -34,6 +34,46 @@ class OrderController extends Controller
             ->get()
             ->keyBy('reference');
 
+        foreach ($orders as $order) {
+            $status = strtolower((string) $order->status);
+            $terminalLabel = match ($status) {
+                'completed' => 'Completed',
+                'partial' => 'Partially completed',
+                'cancelled' => 'Cancelled',
+                'failed' => 'Failed',
+                default => 'Completed',
+            };
+            $activeStep = match ($status) {
+                'pending', 'awaiting_payment' => 1,
+                'processing' => 2,
+                default => 3,
+            };
+            $message = match ($status) {
+                'pending' => 'Your payment is recorded. This order is waiting for manual review and has not yet been sent for fulfilment.',
+                'awaiting_payment' => 'This order is waiting for payment confirmation. It will move forward once payment is verified.',
+                'processing' => 'Your order has been accepted for fulfilment. Progress is shown when an update is available.',
+                'completed' => 'Your order has been marked as completed.',
+                'partial' => 'Some of the requested quantity was delivered. Check the refund status below for any wallet credit.',
+                'cancelled' => 'This order was cancelled. Any refund is shown separately and only appears after it has been credited to your wallet.',
+                'failed' => 'This order was marked as failed. Any refund is shown separately and only appears after it has been credited to your wallet.',
+                default => 'Your order status was updated. Check back for the latest information.',
+            };
+
+            $remaining = $order->provider_remains === null
+                ? null
+                : min((int) $order->quantity, max(0, (int) $order->provider_remains));
+            $delivered = $remaining === null ? null : max(0, (int) $order->quantity - $remaining);
+
+            $order->setAttribute('customer_tracking', [
+                'steps' => ['Order placed', 'Review', 'Processing', $terminalLabel],
+                'active_step' => $activeStep,
+                'message' => $message,
+                'delivered' => $delivered,
+                'remaining' => $remaining,
+                'show_progress' => $remaining !== null && in_array($status, ['processing', 'partial', 'completed'], true),
+            ]);
+        }
+
         return view('orders.index', [
             'orders' => $orders,
             'refunds' => $refunds,

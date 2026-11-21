@@ -99,6 +99,15 @@ class WalletDepositController extends Controller
 
         try {
             $data = $paystack->verify($reference);
+
+            if (($data['status'] ?? null) === 'failed') {
+                $this->markDepositFailed($data, $transaction->id);
+
+                return redirect()->route('wallet.index')->withErrors([
+                    'payment' => 'Paystack declined this payment. No money was added to your wallet.',
+                ]);
+            }
+
             $this->creditVerifiedDeposit($data, $transaction->id);
             return redirect()->route('wallet.index')->with('status', 'Payment verification completed. Your wallet has been refreshed.');
         } catch (Throwable $exception) {
@@ -123,7 +132,8 @@ class WalletDepositController extends Controller
             return response()->json(['message' => 'Invalid payload'], 400);
         }
 
-        if (($event['event'] ?? null) !== 'charge.success') {
+        $eventName = $event['event'] ?? null;
+        if (!in_array($eventName, ['charge.success', 'charge.failed'], true)) {
             return response()->json(['received' => true]);
         }
 
@@ -143,13 +153,51 @@ class WalletDepositController extends Controller
         }
 
         try {
-            $this->creditVerifiedDeposit($data, $transaction->id);
+            if ($eventName === 'charge.failed' && ($data['status'] ?? null) === 'failed') {
+                $this->markDepositFailed($data, $transaction->id);
+                return response()->json(['received' => true]);
+            }
+
+            if ($eventName === 'charge.success') {
+                $this->creditVerifiedDeposit($data, $transaction->id);
+            }
         } catch (Throwable $exception) {
             report($exception);
             return response()->json(['message' => 'Deposit could not be processed'], 500);
         }
 
         return response()->json(['received' => true]);
+    }
+
+    private function markDepositFailed(array $data, int $transactionId): void
+    {
+        DB::transaction(function () use ($data, $transactionId) {
+            $transaction = WalletTransaction::query()->lockForUpdate()->findOrFail($transactionId);
+
+            if ($transaction->status !== 'pending') {
+                return;
+            }
+
+            $metadata = $data['metadata'] ?? [];
+            $valid = ($data['status'] ?? null) === 'failed'
+                && ($data['reference'] ?? null) === $transaction->reference
+                && (int) ($data['amount'] ?? 0) === (int) $transaction->amount_kobo
+                && ($data['currency'] ?? null) === 'NGN'
+                && (int) ($metadata['user_id'] ?? 0) === (int) $transaction->user_id
+                && (int) ($metadata['wallet_transaction_id'] ?? 0) === (int) $transaction->id;
+
+            if (!$valid) {
+                throw new \\RuntimeException('Paystack failed transaction details did not match the pending wallet deposit.');
+            }
+
+            $transaction->update([
+                'status' => 'failed',
+                'metadata' => array_merge((array) $transaction->metadata, [
+                    'gateway' => 'paystack',
+                    'failure_confirmed_at' => now()->toISOString(),
+                ]),
+            ]);
+        });
     }
 
     private function creditVerifiedDeposit(array $data, int $transactionId): void

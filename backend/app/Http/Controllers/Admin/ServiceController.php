@@ -51,7 +51,9 @@ class ServiceController extends Controller
             'status' => ['nullable', 'in:all,active,inactive'],
         ]);
         $rawSearch = trim($filters['search'] ?? '');
-        $search = ltrim($rawSearch, '#');
+        $isExactIdSearch = str_starts_with($rawSearch, '#')
+            && ctype_digit(substr($rawSearch, 1));
+        $search = $isExactIdSearch ? substr($rawSearch, 1) : $rawSearch;
         $status = $filters['status'] ?? 'all';
 
         $query = Service::query()->latest();
@@ -61,14 +63,18 @@ class ServiceController extends Controller
             $query->where('is_active', false);
         }
         if ($search !== '') {
-            $query->where(function ($builder) use ($search) {
+            $query->where(function ($builder) use ($search, $isExactIdSearch) {
+                if ($isExactIdSearch) {
+                    $builder->where('id', (int) $search)
+                        ->orWhere('provider_service_id', $search);
+
+                    return;
+                }
+
                 $builder->where('name', 'like', '%'.$search.'%')
                     ->orWhere('platform', 'like', '%'.$search.'%')
                     ->orWhere('category', 'like', '%'.$search.'%')
                     ->orWhere('provider_service_id', 'like', '%'.$search.'%');
-                if (ctype_digit($search)) {
-                    $builder->orWhere('id', (int) $search);
-                }
             });
         }
 

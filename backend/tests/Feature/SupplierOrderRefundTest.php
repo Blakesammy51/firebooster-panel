@@ -178,4 +178,63 @@ class SupplierOrderRefundTest extends TestCase
             ->assertDontSee('Another customer refund')
             ->assertDontSee('+₦0.99');
     }
+
+    public function test_customer_order_history_shows_only_their_credited_refund(): void
+    {
+        $order = $this->makeRefundableOrder('partial', 'Partial', 40);
+        $customer = User::query()->findOrFail($order->user_id);
+        $wallet = Wallet::query()->where('user_id', $customer->id)->firstOrFail();
+
+        WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $customer->id,
+            'type' => 'order_refund',
+            'amount_kobo' => 40,
+            'currency' => 'NGN',
+            'status' => 'completed',
+            'reference' => 'ORDER-' . $order->id . '-REFUND',
+            'description' => 'Wallet refund for order #' . $order->id,
+        ]);
+
+        $otherUser = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $otherService = Service::query()->create([
+            'name' => 'Other Instagram Service',
+            'platform' => 'Instagram',
+            'description' => 'Another customer service.',
+            'price_per_1000' => '5.00',
+            'minimum_quantity' => 50,
+            'maximum_quantity' => 10000,
+            'is_active' => true,
+        ]);
+        $otherOrder = Order::query()->create([
+            'user_id' => $otherUser->id,
+            'service_id' => $otherService->id,
+            'target_url' => 'https://www.instagram.com/other/',
+            'quantity' => 100,
+            'unit_price' => '5.00',
+            'total_price' => '0.50',
+            'status' => 'cancelled',
+        ]);
+        $otherWallet = Wallet::query()->create(['user_id' => $otherUser->id, 'balance_kobo' => 0, 'currency' => 'NGN']);
+        WalletTransaction::query()->create([
+            'wallet_id' => $otherWallet->id,
+            'user_id' => $otherUser->id,
+            'type' => 'order_refund',
+            'amount_kobo' => 99,
+            'currency' => 'NGN',
+            'status' => 'completed',
+            'reference' => 'ORDER-' . $otherOrder->id . '-REFUND',
+            'description' => 'Another customer refund',
+        ]);
+
+        $this->actingAs($customer)
+            ->get(route('orders.index'))
+            ->assertOk()
+            ->assertSee('Refund status')
+            ->assertSee('Refund credited')
+            ->assertSee('+₦0.40')
+            ->assertDontSee('Another customer refund')
+            ->assertDontSee('+₦0.99');
+    }
+
 }

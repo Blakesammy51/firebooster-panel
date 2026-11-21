@@ -2,6 +2,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\SupplierReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ServiceController;
@@ -29,6 +30,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/dashboard/supplier-balance/refresh', [DashboardController::class, 'refreshSupplierBalance'])->name('dashboard.supplier-balance.refresh');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::get('/reports/supplier', [SupplierReportController::class, 'index'])->name('reports.supplier');
     Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
     Route::post('/services/smm-center/sync', [AdminServiceController::class, 'syncSmmCenter'])->name('services.smm-center.sync');
     Route::post('/services', [AdminServiceController::class, 'store'])->name('services.store');

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\\Services;
+namespace App\Services;
 
-use Illuminate\\Http\\Client\\PendingRequest;
-use Illuminate\\Support\\Facades\\Http;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class SmmCenterClient

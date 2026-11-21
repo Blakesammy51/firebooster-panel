@@ -279,7 +279,7 @@ class SmmCenterOrderSubmissionTest extends TestCase
             'provider_order_id' => '7654321',
             'provider_status' => 'Completed',
             'status' => 'completed',
-            'notes' => "Paid from wallet. Awaiting manual review; not submitted to a provider.\\nSubmitted to SMM Center. Provider order ID: 7654321",
+            'notes' => "Paid from wallet. Awaiting manual review; not submitted to a provider.\nSubmitted to SMM Center. Provider order ID: 7654321",
         ]);
 
         $this->actingAs($admin)

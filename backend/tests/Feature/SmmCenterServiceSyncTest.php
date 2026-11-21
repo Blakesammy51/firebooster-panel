@@ -157,4 +157,73 @@ class SmmCenterServiceSyncTest extends TestCase
             ->get(route('admin.services.index', ['search' => 'Instagram']))
             ->assertForbidden();
     }
+
+    public function test_admin_can_filter_services_by_active_status_and_see_counts(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+
+        Service::query()->create([
+            'name' => 'Published Instagram Followers',
+            'platform' => 'Instagram',
+            'description' => 'Visible service.',
+            'price_per_1000' => '3500.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 100000,
+            'is_active' => true,
+        ]);
+        Service::query()->create([
+            'name' => 'Old Instagram Test Service',
+            'platform' => 'Instagram',
+            'description' => 'Hidden test service.',
+            'price_per_1000' => '5.00',
+            'minimum_quantity' => 100,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index', ['status' => 'active']))
+            ->assertOk()
+            ->assertSee('Published Instagram Followers')
+            ->assertDontSee('Old Instagram Test Service')
+            ->assertSee('Active services')
+            ->assertSee('Inactive services');
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index', ['status' => 'inactive']))
+            ->assertOk()
+            ->assertSee('Old Instagram Test Service')
+            ->assertDontSee('Published Instagram Followers');
+    }
+
+    public function test_admin_service_status_filter_preserves_search_term(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        Service::query()->create([
+            'name' => 'Instagram Active Followers',
+            'platform' => 'Instagram',
+            'description' => 'Visible service.',
+            'price_per_1000' => '3500.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 100000,
+            'is_active' => true,
+        ]);
+        Service::query()->create([
+            'name' => 'Instagram Hidden Test',
+            'platform' => 'Instagram',
+            'description' => 'Hidden service.',
+            'price_per_1000' => '5.00',
+            'minimum_quantity' => 100,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index', ['status' => 'inactive', 'search' => 'Instagram']))
+            ->assertOk()
+            ->assertSee('Instagram Hidden Test')
+            ->assertDontSee('Instagram Active Followers');
+    }
+
+
 }

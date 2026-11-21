@@ -6,6 +6,9 @@
 <div class="space-y-4">@forelse ($orders as $order)<article class="rounded-xl border border-slate-800 bg-slate-900 p-5"><div class="flex flex-wrap justify-between gap-3"><div><h2 class="font-semibold">Order #{{ $order->id }} · {{ $order->service->name }}</h2><p class="mt-1 text-sm text-slate-400">{{ $order->user->email }} · {{ number_format($order->quantity) }} units · ₦{{ number_format((float) $order->total_price,2) }}</p><a class="mt-2 inline-block break-all text-sm text-violet-300 underline" href="{{ $order->target_url }}" target="_blank" rel="noopener noreferrer">{{ $order->target_url }}</a></div><span class="text-sm text-slate-300">{{ ucfirst(str_replace('_',' ',$order->status)) }}</span></div>
 @if ($order->service->provider === 'smm_center')
 <p class="mt-3 text-xs text-slate-400">Supplier: SMM Center · Provider order: {{ $order->provider_order_id ?? 'Not submitted' }} · Supplier status: {{ $order->provider_status ?? 'Not available' }}</p>
+@if ($order->provider_order_id)
+<form method="POST" action="{{ route('admin.orders.refresh-provider-status', $order) }}" class="mt-3">@csrf<button class="rounded-lg border border-emerald-500 px-4 py-2 text-emerald-200">Refresh supplier status</button></form>
+@endif
 @if (!$order->provider_order_id && !$order->provider_status && in_array($order->status, ['pending', 'processing'], true))
 <form method="POST" action="{{ route('admin.orders.submit-to-provider', $order) }}" class="mt-3">@csrf<button class="rounded-lg bg-violet-600 px-4 py-2 font-semibold text-white">Submit to SMM Center</button></form>
 @endif

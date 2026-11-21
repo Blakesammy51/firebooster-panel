@@ -170,7 +170,7 @@ class SmmCenterServiceSyncTest extends TestCase
             ->assertOk()
             ->assertSee('Instagram Followers Fast')
             ->assertDontSee('TikTok Likes')
-            ->assertSee('Search catalogue');
+            ->assertSee('Find service');
 
         $this->actingAs($admin)
             ->get(route('admin.services.index', ['search' => '32748']))

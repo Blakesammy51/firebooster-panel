@@ -10,6 +10,7 @@
 <main class="mx-auto max-w-6xl px-5 py-10">
     <a href="{{ route('admin.dashboard') }}" class="text-violet-300 underline">← Admin dashboard</a>
     <h1 class="my-6 text-3xl font-bold">Service catalogue</h1>
+    <p class="mb-6 text-sm text-slate-300">Organise services by platform and customer-facing category. Category names are editable per service; matching names appear together in the customer catalogue.</p>
 
     <section class="mb-8 rounded-xl border border-violet-800 bg-slate-900 p-5">
         <h2 class="text-xl font-semibold">SMM Center supplier</h2>
@@ -55,9 +56,21 @@
 
     <form method="GET" action="{{ route('admin.services.index') }}" class="mb-6 flex flex-col gap-3 rounded-xl border border-violet-800 bg-slate-900 p-4 sm:flex-row">
         <input type="hidden" name="status" value="{{ $status }}">
+        <select name="platform" aria-label="Filter platform" class="rounded-lg bg-slate-950 p-3">
+            <option value="">All platforms</option>
+            @foreach ($platforms as $platformOption)
+                <option value="{{ $platformOption }}" @selected($selectedPlatform === $platformOption)>{{ $platformOption }}</option>
+            @endforeach
+        </select>
+        <select name="category" aria-label="Filter category" class="rounded-lg bg-slate-950 p-3">
+            <option value="">All categories</option>
+            @foreach ($categories as $categoryOption)
+                <option value="{{ $categoryOption }}" @selected($selectedCategory === $categoryOption)>{{ $categoryOption }}</option>
+            @endforeach
+        </select>
         <input name="search" value="{{ $search }}" maxlength="120" placeholder="Search service name, local ID (#3438) or supplier ID (#3148)…" aria-label="Search services" class="min-w-0 flex-1 rounded-lg bg-slate-950 p-3 text-slate-100">
         <button class="rounded-lg bg-violet-600 px-5 py-3 font-semibold">Find service</button>
-        @if ($search !== '' || $status !== 'all')
+        @if ($search !== '' || $status !== 'all' || $selectedPlatform !== '' || $selectedCategory !== '')
             <a href="{{ route('admin.services.index') }}" class="rounded-lg border border-slate-600 px-5 py-3 text-center">Clear filters</a>
         @endif
     </form>
@@ -84,6 +97,7 @@
         <p class="text-sm text-slate-400 md:col-span-2">To add an imported SMM Center service, search by its supplier ID or name above, then set your NGN selling price and activate it in the matching result below.</p>
         <input name="name" required maxlength="120" placeholder="Service name" class="rounded-lg bg-slate-950 p-3">
         <input name="platform" required maxlength="40" placeholder="Platform (Instagram, TikTok…)" class="rounded-lg bg-slate-950 p-3">
+        <input name="category" maxlength="255" placeholder="Category (e.g. Followers, Likes, Views)" class="rounded-lg bg-slate-950 p-3">
         <textarea name="description" required maxlength="2000" placeholder="Description" class="rounded-lg bg-slate-950 p-3 md:col-span-2"></textarea>
         <input name="price_per_1000" type="number" min="0" step="0.01" required placeholder="Price per 1,000 (NGN)" class="rounded-lg bg-slate-950 p-3">
         <input name="minimum_quantity" type="number" min="1" value="1" required placeholder="Minimum quantity" class="rounded-lg bg-slate-950 p-3">
@@ -113,7 +127,8 @@
                 @endif
 
                 <input name="name" value="{{ $service->name }}" required class="rounded-lg bg-slate-950 p-3">
-                <input name="platform" value="{{ $service->platform }}" required class="rounded-lg bg-slate-950 p-3">
+                <input name="platform" value="{{ $service->platform }}" required placeholder="Platform" class="rounded-lg bg-slate-950 p-3">
+                <input name="category" value="{{ $service->category }}" maxlength="255" placeholder="Customer category (e.g. Followers, Likes, Views)" class="rounded-lg bg-slate-950 p-3">
                 <textarea name="description" required class="rounded-lg bg-slate-950 p-3 md:col-span-2">{{ $service->description }}</textarea>
                 <input name="price_per_1000" type="number" min="0" step="0.01" value="{{ $service->price_per_1000 }}" required class="rounded-lg bg-slate-950 p-3">
                 <input name="minimum_quantity" type="number" min="1" value="{{ $service->minimum_quantity }}" required class="rounded-lg bg-slate-950 p-3">

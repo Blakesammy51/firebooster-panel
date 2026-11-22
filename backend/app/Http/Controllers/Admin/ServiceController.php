@@ -49,6 +49,8 @@ class ServiceController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', 'in:all,active,inactive'],
+            'platform' => ['nullable', 'string', 'max:40'],
+            'category' => ['nullable', 'string', 'max:255'],
         ]);
         $rawSearch = trim($filters['search'] ?? '');
         $isExactIdSearch = str_starts_with($rawSearch, '#')
@@ -61,6 +63,12 @@ class ServiceController extends Controller
             $query->where('is_active', true);
         } elseif ($status === 'inactive') {
             $query->where('is_active', false);
+        }
+        if (!empty($filters['platform'])) {
+            $query->where('platform', $filters['platform']);
+        }
+        if (!empty($filters['category'])) {
+            $query->whereRaw('LOWER(category) = ?', [mb_strtolower(trim($filters['category']))]);
         }
         if ($search !== '') {
             $query->where(function ($builder) use ($search, $isExactIdSearch) {
@@ -85,6 +93,10 @@ class ServiceController extends Controller
             'inactiveServiceCount' => Service::query()->where('is_active', false)->count(),
             'search' => $rawSearch,
             'status' => $status,
+            'platforms' => Service::query()->whereNotNull('platform')->where('platform', '!=', '')->distinct()->orderBy('platform')->pluck('platform'),
+            'categories' => Service::query()->whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category'),
+            'selectedPlatform' => $filters['platform'] ?? '',
+            'selectedCategory' => $filters['category'] ?? '',
         ]);
     }
 
@@ -164,6 +176,7 @@ class ServiceController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'platform' => ['required', 'string', 'max:40'],
+            'category' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:2000'],
             'price_per_1000' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'minimum_quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
@@ -181,6 +194,7 @@ class ServiceController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'platform' => ['required', 'string', 'max:40'],
+            'category' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:2000'],
             'price_per_1000' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'minimum_quantity' => ['required', 'integer', 'min:1', 'max:1000000'],

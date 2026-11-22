@@ -277,6 +277,56 @@ class PaystackDepositSecurityTest extends TestCase
         ]);
     }
 
+    public function test_late_success_webhook_does_not_reopen_failed_or_abandoned_deposits(): void
+    {
+        config(['services.paystack.webhook_secret' => 'whsec_test_signing_secret']);
+
+        foreach (['failed', 'abandoned'] as $terminalStatus) {
+            $user = User::factory()->create(['email_verified_at' => now()]);
+            $wallet = Wallet::query()->create([
+                'user_id' => $user->id,
+                'balance_kobo' => 25000,
+                'currency' => 'NGN',
+            ]);
+            $transaction = WalletTransaction::query()->create([
+                'wallet_id' => $wallet->id,
+                'user_id' => $user->id,
+                'type' => 'deposit',
+                'amount_kobo' => 10000,
+                'currency' => 'NGN',
+                'status' => $terminalStatus,
+                'reference' => 'FB-late-success-' . $terminalStatus,
+                'description' => 'Wallet deposit via Paystack',
+                'metadata' => ['gateway' => 'paystack'],
+            ]);
+
+            $body = json_encode([
+                'event' => 'charge.success',
+                'data' => [
+                    'status' => 'success',
+                    'reference' => $transaction->reference,
+                    'amount' => 10000,
+                    'currency' => 'NGN',
+                    'metadata' => [
+                        'user_id' => $user->id,
+                        'wallet_transaction_id' => $transaction->id,
+                    ],
+                ],
+            ], JSON_THROW_ON_ERROR);
+
+            $this->sendSignedWebhook($body)->assertOk();
+
+            $this->assertDatabaseHas('wallets', [
+                'id' => $wallet->id,
+                'balance_kobo' => 25000,
+            ]);
+            $this->assertDatabaseHas('wallet_transactions', [
+                'id' => $transaction->id,
+                'status' => $terminalStatus,
+            ]);
+        }
+    }
+
     private function sendSignedWebhook(string $body)
     {
         $timestamp = time();

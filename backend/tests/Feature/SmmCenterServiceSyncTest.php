@@ -307,4 +307,69 @@ class SmmCenterServiceSyncTest extends TestCase
     }
 
 
+
+    public function test_admin_can_filter_services_by_platform_and_customer_category(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        Service::query()->create([
+            'name' => 'Instagram Followers',
+            'platform' => 'Instagram',
+            'category' => 'Followers',
+            'description' => 'Followers service.',
+            'price_per_1000' => '100.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+        Service::query()->create([
+            'name' => 'TikTok Likes',
+            'platform' => 'TikTok',
+            'category' => 'Likes',
+            'description' => 'Likes service.',
+            'price_per_1000' => '200.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 10000,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index', ['platform' => 'Instagram', 'category' => 'Followers']))
+            ->assertOk()
+            ->assertSee('Instagram Followers')
+            ->assertDontSee('TikTok Likes');
+    }
+
+    public function test_admin_can_change_a_service_customer_facing_category(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $service = Service::query()->create([
+            'name' => 'Instagram Followers',
+            'platform' => 'Instagram',
+            'category' => 'Old supplier category',
+            'description' => 'Imported service.',
+            'price_per_1000' => '3500.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 100000,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.services.update', $service), [
+                'name' => $service->name,
+                'platform' => 'Instagram',
+                'category' => 'Followers',
+                'description' => $service->description,
+                'price_per_1000' => '3500.00',
+                'minimum_quantity' => 10,
+                'maximum_quantity' => 100000,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $this->assertDatabaseHas('services', [
+            'id' => $service->id,
+            'category' => 'Followers',
+        ]);
+    }
+
 }

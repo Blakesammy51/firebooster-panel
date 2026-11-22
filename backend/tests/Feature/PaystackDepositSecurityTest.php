@@ -482,6 +482,59 @@ class PaystackDepositSecurityTest extends TestCase
         ]);
     }
 
+    public function test_webhook_with_mismatched_user_or_wallet_transaction_metadata_does_not_credit_wallet(): void
+    {
+        config(['services.paystack.webhook_secret' => 'whsec_test_signing_secret']);
+
+        foreach (['user_id', 'wallet_transaction_id'] as $mismatchedField) {
+            $user = User::factory()->create(['email_verified_at' => now()]);
+            $wallet = Wallet::query()->create([
+                'user_id' => $user->id,
+                'balance_kobo' => 17000,
+                'currency' => 'NGN',
+            ]);
+            $transaction = WalletTransaction::query()->create([
+                'wallet_id' => $wallet->id,
+                'user_id' => $user->id,
+                'type' => 'deposit',
+                'amount_kobo' => 50000,
+                'currency' => 'NGN',
+                'status' => 'pending',
+                'reference' => 'FB-webhook-wrong-' . $mismatchedField,
+                'description' => 'Wallet deposit via Paystack',
+                'metadata' => ['gateway' => 'paystack'],
+            ]);
+
+            $metadata = [
+                'user_id' => $user->id,
+                'wallet_transaction_id' => $transaction->id,
+            ];
+            $metadata[$mismatchedField]++;
+
+            $body = json_encode([
+                'event' => 'charge.success',
+                'data' => [
+                    'status' => 'success',
+                    'reference' => $transaction->reference,
+                    'amount' => 50000,
+                    'currency' => 'NGN',
+                    'metadata' => $metadata,
+                ],
+            ], JSON_THROW_ON_ERROR);
+
+            $this->sendSignedWebhook($body)->assertStatus(500);
+
+            $this->assertDatabaseHas('wallets', [
+                'id' => $wallet->id,
+                'balance_kobo' => 17000,
+            ]);
+            $this->assertDatabaseHas('wallet_transactions', [
+                'id' => $transaction->id,
+                'status' => 'pending',
+            ]);
+        }
+    }
+
     public function test_callback_with_mismatched_amount_does_not_credit_wallet(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);

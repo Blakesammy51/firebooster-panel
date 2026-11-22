@@ -137,6 +137,23 @@ class CustomerOrderTrackingTest extends TestCase
         $this->assertSame(2, substr_count($response->getContent(), '<form'));
     }
 
+    public function test_customer_service_cards_show_clear_order_details_without_exposing_supplier_ids(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $this->createSupplierService();
+
+        $response = $this->actingAs($customer)->get(route('services.index'));
+
+        $response->assertOk()
+            ->assertSee('Price per 1,000')
+            ->assertSee('₦3,500.00')
+            ->assertSee('Minimum order')
+            ->assertSee('Maximum order')
+            ->assertSee('100,000')
+            ->assertDontSee('27551')
+            ->assertDontSee('Service ID:');
+    }
+
     public function test_customer_catalogue_uses_a_category_dropdown_instead_of_category_chips(): void
     {
         $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);

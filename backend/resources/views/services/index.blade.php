@@ -113,9 +113,15 @@
         <p class="text-xs font-semibold uppercase tracking-wider text-violet-300">{{ $platformMap[$service->platform] ?? $service->platform }}@if($service->category) · {{ $service->category }}@endif</p>
         <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 px-2.5 py-1 text-xs font-medium text-emerald-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Available</span>
     </div>
-    <h3 class="mt-3 text-lg font-bold leading-snug">{{ $service->name }}</h3>
+    <h3 class="mt-3 text-lg font-bold leading-snug">{{ $service->display_name }}</h3>
+    @if ($service->display_speed || $service->display_start_time)
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+            @if ($service->display_speed)<span class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-300"><span class="text-slate-500">Speed</span> <strong class="ml-1 text-slate-100">{{ $service->display_speed }}</strong></span>@endif
+            @if ($service->display_start_time)<span class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-300"><span class="text-slate-500">Start time</span> <strong class="ml-1 text-slate-100">{{ $service->display_start_time }}</strong></span>@endif
+        </div>
+    @endif
     @if ($service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.'))
-        <p class="mt-2 text-sm leading-relaxed text-slate-400">{{ $service->description }}</p>
+        <p class="mt-2 text-sm leading-relaxed text-slate-400">{{ $service->display_description }}</p>
     @endif
     <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
         <p class="text-xs text-slate-400">Price per 1,000</p>
@@ -141,8 +147,8 @@
         type="button"
         class="select-service-button mt-5 w-full rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300"
         data-service-id="{{ $service->id }}"
-        data-service-name="{{ $service->name }}"
-        data-service-description="{{ $service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.') ? $service->description : '' }}"
+        data-service-name="{{ $service->display_name }}"
+        data-service-description="{{ $service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.') ? $service->display_description : '' }}"
         data-price-per-1000="{{ number_format((float) $service->price_per_1000, 2, '.', '') }}"
         data-minimum="{{ $service->minimum_quantity }}"
         data-maximum="{{ $service->maximum_quantity }}"

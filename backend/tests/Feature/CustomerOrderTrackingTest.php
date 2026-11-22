@@ -137,4 +137,38 @@ class CustomerOrderTrackingTest extends TestCase
         $this->assertSame(2, substr_count($response->getContent(), '<form'));
     }
 
+    public function test_customer_catalogue_uses_a_category_dropdown_instead_of_category_chips(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $this->createSupplierService();
+
+        Service::query()->create([
+            'name' => 'Facebook Video Views',
+            'platform' => 'Facebook',
+            'category' => 'Facebook Video Views',
+            'provider' => 'smm_center',
+            'provider_service_id' => '29014',
+            'description' => 'Supplier-backed Facebook views.',
+            'price_per_1000' => '120.00',
+            'minimum_quantity' => 500,
+            'maximum_quantity' => 1000000,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($customer)->get(route('services.index'));
+
+        $response->assertOk()
+            ->assertSee('Browse category')
+            ->assertSee('id="catalogue-category"', false)
+            ->assertSee('<option value="">All categories</option>', false)
+            ->assertSee('<option value="Instagram Followers"', false)
+            ->assertSee('<option value="Facebook Video Views"', false)
+            ->assertDontSee('All categories</a>', false);
+
+        $facebookResponse = $this->actingAs($customer)->get(route('services.index', ['platform' => 'Facebook']));
+        $facebookResponse->assertOk()
+            ->assertSee('<option value="Facebook Video Views"', false)
+            ->assertDontSee('<option value="Instagram Followers"', false);
+    }
+
 }

@@ -53,22 +53,54 @@
         @endforeach
     </div>
     <form method="GET" action="{{ route('services.index') }}" class="mt-4 space-y-3">
-        @if ($selectedPlatform !== '')<input type="hidden" name="platform" value="{{ $selectedPlatform }}">@endif
+        <input id="catalogue-platform-value" type="hidden" name="platform" value="{{ $selectedPlatform }}">
+        <input id="catalogue-category-value" type="hidden" name="category" value="{{ $selectedCategory }}">
         <label class="block">
             <span class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Quick search</span>
             <input id="catalogue-search" type="search" name="q" value="{{ $search }}" placeholder="Search by service name or ID…" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none">
         </label>
         <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <label class="block">
+            <div class="relative">
                 <span class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Browse category</span>
-                <select id="catalogue-category" name="category" class="w-full appearance-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white focus:border-violet-500 focus:outline-none">
-                    <option value="">All categories</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category }}" {{ mb_strtolower($selectedCategory) === mb_strtolower($category) ? 'selected' : '' }}>{{ $category }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <button class="rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-violet-500">Search</button>
+                <button id="category-picker-trigger" type="button" aria-expanded="false" aria-controls="category-picker-panel" class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3.5 text-left text-sm text-white transition hover:border-violet-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+                    <span class="flex min-w-0 items-center gap-3">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300" aria-hidden="true">▦</span>
+                        <span class="min-w-0"><span class="block text-[10px] uppercase tracking-wider text-slate-500">Selected category</span><span id="category-picker-label" class="block truncate font-semibold">{{ $selectedCategory !== '' ? $selectedCategory : 'All categories' }}</span></span>
+                    </span>
+                    <svg id="category-picker-chevron" class="h-5 w-5 shrink-0 text-slate-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div id="category-picker-panel" class="absolute inset-x-0 top-full z-30 mt-2 hidden overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/40" hidden>
+                    <div class="border-b border-slate-800 p-3">
+                        <label class="relative block">
+                            <span class="sr-only">Search categories</span>
+                            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+                            <input id="category-picker-search" type="search" placeholder="Search categories…" class="w-full rounded-xl border border-slate-700 bg-slate-950 py-3 pl-9 pr-3 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none">
+                        </label>
+                        <div class="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Filter categories by platform">
+                            <button type="button" data-category-platform="" class="category-platform-chip shrink-0 rounded-full bg-violet-600 px-3 py-2 text-xs font-semibold text-white">All</button>
+                            @foreach ($platforms as $platform)
+                                <button type="button" data-category-platform="{{ $platform }}" class="category-platform-chip shrink-0 rounded-full border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300">{{ $platform }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div id="category-picker-options" class="max-h-64 overflow-y-auto p-2">
+                        <button type="button" data-category-value="" data-category-name="All categories" class="category-picker-option flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition hover:bg-slate-800 {{ $selectedCategory === '' ? 'bg-violet-500/10 text-violet-200' : 'text-slate-200' }}">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-300" aria-hidden="true">▦</span>
+                            <span class="min-w-0 flex-1"><span class="block font-semibold">All categories</span><span class="block text-xs text-slate-500">Browse every available service</span></span>
+                            @if ($selectedCategory === '')<span class="text-violet-300" aria-label="Selected">✓</span>@endif
+                        </button>
+                        @foreach ($categories as $category)
+                            <button type="button" data-category-value="{{ $category }}" data-category-name="{{ $category }}" class="category-picker-option flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition hover:bg-slate-800 {{ mb_strtolower($selectedCategory) === mb_strtolower($category) ? 'bg-violet-500/10 text-violet-200' : 'text-slate-200' }}">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-violet-300" aria-hidden="true">◇</span>
+                                <span class="min-w-0 flex-1"><span class="block font-semibold">{{ $category }}</span><span class="block text-xs text-slate-500">View matching services</span></span>
+                                @if (mb_strtolower($selectedCategory) === mb_strtolower($category))<span class="text-violet-300" aria-label="Selected">✓</span>@endif
+                            </button>
+                        @endforeach
+                        <p id="category-picker-empty" class="hidden px-3 py-6 text-center text-sm text-slate-500">No matching categories found.</p>
+                    </div>
+                </div>
+            </div>
+            <button class="rounded-xl bg-violet-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-violet-500">Search services</button>
         </div>
     </form>
 </section>
@@ -129,6 +161,11 @@
         <label class="block text-sm font-medium text-slate-200" for="selected-quantity">Quantity
             <input id="selected-quantity" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white focus:border-violet-500 focus:outline-none" required type="number" name="quantity" min="1" max="1" value="{{ old('quantity') }}" step="1">
             <span id="selected-quantity-limits" class="mt-1 block text-xs text-slate-400">Select a service to see its quantity limits.</span>
+            <div id="quantity-presets" class="mt-3 flex flex-wrap gap-2" aria-label="Quick quantity choices">
+                <button type="button" data-quantity-preset="1000" class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-violet-500 hover:text-white">1,000</button>
+                <button type="button" data-quantity-preset="5000" class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-violet-500 hover:text-white">5,000</button>
+                <button type="button" data-quantity-preset="10000" class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-violet-500 hover:text-white">10,000</button>
+            </div>
         </label>
         <div class="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm">
             <div class="flex justify-between gap-3"><span class="text-slate-400">Price per 1,000</span><strong id="selected-unit-price" class="text-slate-200">—</strong></div>
@@ -307,6 +344,15 @@
     });
 
     quantity.addEventListener('input', updateEstimate);
+    document.querySelectorAll('[data-quantity-preset]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!selectedService) return;
+            const preset = Number.parseInt(button.dataset.quantityPreset, 10);
+            if (preset < selectedService.minimum || preset > selectedService.maximum) return;
+            quantity.value = String(preset);
+            updateEstimate();
+        });
+    });
 
     const previouslySelectedId = @json((string) old('service_id', ''));
     if (previouslySelectedId) {
@@ -319,7 +365,72 @@
         }
     }
 })();
-    const categorySelect = document.getElementById('catalogue-category');
-    categorySelect?.addEventListener('change', () => categorySelect.form.requestSubmit());
+    const categoryForm = document.querySelector('form[action="{{ route('services.index') }}"]');
+    const categoryTrigger = document.getElementById('category-picker-trigger');
+    const categoryPanel = document.getElementById('category-picker-panel');
+    const categoryLabel = document.getElementById('category-picker-label');
+    const categoryValue = document.getElementById('catalogue-category-value');
+    const platformValue = document.getElementById('catalogue-platform-value');
+    const categorySearch = document.getElementById('category-picker-search');
+    const categoryChevron = document.getElementById('category-picker-chevron');
+    const categoryOptions = Array.from(document.querySelectorAll('.category-picker-option'));
+    const categoryChips = Array.from(document.querySelectorAll('.category-platform-chip'));
+    const categoryEmpty = document.getElementById('category-picker-empty');
+    let activeCategoryPlatform = platformValue?.value || '';
+
+    const closeCategoryPicker = () => {
+        categoryPanel?.classList.add('hidden');
+        if (categoryPanel) categoryPanel.hidden = true;
+        categoryTrigger?.setAttribute('aria-expanded', 'false');
+        categoryChevron?.classList.remove('rotate-180');
+    };
+    const openCategoryPicker = () => {
+        categoryPanel?.classList.remove('hidden');
+        if (categoryPanel) categoryPanel.hidden = false;
+        categoryTrigger?.setAttribute('aria-expanded', 'true');
+        categoryChevron?.classList.add('rotate-180');
+        window.setTimeout(() => categorySearch?.focus(), 40);
+    };
+    const filterCategoryOptions = () => {
+        const term = (categorySearch?.value || '').trim().toLocaleLowerCase();
+        let visible = 0;
+        categoryOptions.forEach((option) => {
+            const matches = option.dataset.categoryName.toLocaleLowerCase().includes(term);
+            option.classList.toggle('hidden', !matches);
+            if (matches) visible++;
+        });
+        if (categoryEmpty) categoryEmpty.classList.toggle('hidden', visible > 0);
+    };
+    const paintCategoryChips = () => {
+        categoryChips.forEach((chip) => {
+            const active = chip.dataset.categoryPlatform.toLocaleLowerCase() === activeCategoryPlatform.toLocaleLowerCase();
+            chip.className = 'category-platform-chip shrink-0 rounded-full px-3 py-2 text-xs font-semibold transition ' + (active ? 'bg-violet-600 text-white' : 'border border-slate-700 bg-slate-950 text-slate-300 hover:border-violet-500');
+        });
+    };
+    categoryTrigger?.addEventListener('click', () => {
+        if (categoryTrigger.getAttribute('aria-expanded') === 'true') closeCategoryPicker();
+        else openCategoryPicker();
+    });
+    categorySearch?.addEventListener('input', filterCategoryOptions);
+    categoryChips.forEach((chip) => chip.addEventListener('click', () => {
+        activeCategoryPlatform = chip.dataset.categoryPlatform;
+        platformValue.value = activeCategoryPlatform;
+        categoryValue.value = '';
+        if (categoryForm) categoryForm.requestSubmit();
+    }));
+    categoryOptions.forEach((option) => option.addEventListener('click', () => {
+        categoryValue.value = option.dataset.categoryValue;
+        categoryLabel.textContent = option.dataset.categoryName;
+        closeCategoryPicker();
+        if (categoryForm) categoryForm.requestSubmit();
+    }));
+    document.addEventListener('click', (event) => {
+        if (categoryPanel && !categoryPanel.contains(event.target) && !categoryTrigger?.contains(event.target)) closeCategoryPicker();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeCategoryPicker();
+    });
+    paintCategoryChips();
+    filterCategoryOptions();
 </script>
 </body></html>

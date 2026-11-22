@@ -249,7 +249,15 @@
             cancel: button.dataset.cancel === 'Yes'
         };
 
-        if (!Number.isFinite(selectedService.pricePer1000) || selectedService.pricePer1000 <= 0) {\n            selectedService = null;\n            setMessage('This service price could not be loaded. Please refresh the page or choose another service.', 'error');\n            submit.disabled = true;\n            stickySubmit.disabled = true;\n            return;\n        }\n\n        serviceId.value = selectedService.id;
+        if (!Number.isFinite(selectedService.pricePer1000) || selectedService.pricePer1000 <= 0) {
+            selectedService = null;
+            setMessage('This service price could not be loaded. Please refresh the page or choose another service.', 'error');
+            submit.disabled = true;
+            stickySubmit.disabled = true;
+            return;
+        }
+
+        serviceId.value = selectedService.id;
         serviceTitle.textContent = selectedService.name;
         serviceDescription.textContent = selectedService.description;
         serviceDescription.classList.toggle('hidden', !selectedService.description);

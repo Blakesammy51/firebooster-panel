@@ -452,6 +452,54 @@ class PaystackDepositSecurityTest extends TestCase
         ]);
     }
 
+    public function test_callback_with_mismatched_amount_does_not_credit_wallet(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $wallet = Wallet::query()->create([
+            'user_id' => $user->id,
+            'balance_kobo' => 18000,
+            'currency' => 'NGN',
+        ]);
+        $transaction = WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $user->id,
+            'type' => 'deposit',
+            'amount_kobo' => 50000,
+            'currency' => 'NGN',
+            'status' => 'pending',
+            'reference' => 'FB-callback-wrong-amount',
+            'description' => 'Wallet deposit via Paystack',
+            'metadata' => ['gateway' => 'paystack'],
+        ]);
+
+        $this->mock(PaystackGateway::class, function ($mock) use ($transaction, $user) {
+            $mock->shouldReceive('verify')->once()->with($transaction->reference)->andReturn([
+                'status' => 'success',
+                'reference' => $transaction->reference,
+                'amount' => 100000,
+                'currency' => 'NGN',
+                'metadata' => [
+                    'user_id' => $user->id,
+                    'wallet_transaction_id' => $transaction->id,
+                ],
+            ]);
+        });
+
+        $this->actingAs($user)
+            ->get(route('wallet.deposit.callback', ['reference' => $transaction->reference]))
+            ->assertRedirect(route('wallet.index'))
+            ->assertSessionHasErrors('payment');
+
+        $this->assertDatabaseHas('wallets', [
+            'id' => $wallet->id,
+            'balance_kobo' => 18000,
+        ]);
+        $this->assertDatabaseHas('wallet_transactions', [
+            'id' => $transaction->id,
+            'status' => 'pending',
+        ]);
+    }
+
     private function sendSignedWebhook(string $body)
     {
         $timestamp = time();

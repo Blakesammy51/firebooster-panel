@@ -171,6 +171,8 @@ class CustomerOrderTrackingTest extends TestCase
 
         $facebookResponse = $this->actingAs($customer)->get(route('services.index', ['platform' => 'Facebook']));
         $facebookResponse->assertOk()
+            ->assertSee('All Facebook categories')
+            ->assertSee('data-category-name="All Facebook categories"', false)
             ->assertSee('data-category-name="Facebook Video Views"', false)
             ->assertDontSee('data-category-name="Instagram Followers"', false);
     }

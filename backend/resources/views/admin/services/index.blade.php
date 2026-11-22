@@ -12,6 +12,14 @@
     <h1 class="my-6 text-3xl font-bold">Service catalogue</h1>
     <p class="mb-6 text-sm text-slate-300">Organise services by platform and customer-facing category. Category names are editable per service; matching names appear together in the customer catalogue.</p>
 
+    @php
+        $preservedFilters = array_filter([
+            'search' => $search,
+            'platform' => $selectedPlatform,
+            'category' => $selectedCategory,
+        ], fn ($value) => $value !== null && $value !== '');
+    @endphp
+
     <section class="mb-8 rounded-xl border border-violet-800 bg-slate-900 p-5">
         <h2 class="text-xl font-semibold">SMM Center supplier</h2>
         <p class="mt-2 text-sm text-slate-300">Imported supplier services: {{ $providerServiceCount }}. Sync retrieves the latest categories, service IDs, supplier rates, limits and refill/cancel flags.</p>
@@ -35,18 +43,18 @@
     @endif
 
     <section class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <a href="{{ route('admin.services.index', array_filter(['status' => 'all', 'search' => $search])) }}"
+        <a href="{{ route('admin.services.index', array_merge($preservedFilters, ['status' => 'all'])) }}"
            class="rounded-xl border p-4 {{ $status === 'all' ? 'border-violet-400 bg-violet-950' : 'border-slate-800 bg-slate-900' }}">
             <span class="block text-sm text-slate-300">All services</span>
             <strong class="mt-1 block text-2xl">{{ $activeServiceCount + $inactiveServiceCount }}</strong>
         </a>
-        <a href="{{ route('admin.services.index', array_filter(['status' => 'active', 'search' => $search])) }}"
+        <a href="{{ route('admin.services.index', array_merge($preservedFilters, ['status' => 'active'])) }}"
            class="rounded-xl border p-4 {{ $status === 'active' ? 'border-emerald-400 bg-emerald-950' : 'border-slate-800 bg-slate-900' }}">
             <span class="block text-sm text-slate-300">Active services</span>
             <strong class="mt-1 block text-2xl text-emerald-300">{{ $activeServiceCount }}</strong>
             <span class="text-xs text-slate-400">Visible to customers</span>
         </a>
-        <a href="{{ route('admin.services.index', array_filter(['status' => 'inactive', 'search' => $search])) }}"
+        <a href="{{ route('admin.services.index', array_merge($preservedFilters, ['status' => 'inactive'])) }}"
            class="rounded-xl border p-4 {{ $status === 'inactive' ? 'border-amber-400 bg-amber-950' : 'border-slate-800 bg-slate-900' }}">
             <span class="block text-sm text-slate-300">Inactive services</span>
             <strong class="mt-1 block text-2xl text-amber-300">{{ $inactiveServiceCount }}</strong>

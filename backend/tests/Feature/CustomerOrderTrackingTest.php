@@ -111,12 +111,18 @@ class CustomerOrderTrackingTest extends TestCase
         $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
         $this->createSupplierService();
 
-        $secondService = $this->createSupplierService();
-        $secondService->forceFill([
+        Service::query()->create([
             'name' => 'Instagram Likes',
-            'provider_service_id' => '27552',
+            'platform' => 'Instagram',
             'category' => 'Likes',
-        ])->save();
+            'provider' => 'smm_center',
+            'provider_service_id' => '27552',
+            'description' => 'Supplier-backed likes service.',
+            'price_per_1000' => '1200.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 50000,
+            'is_active' => true,
+        ]);
 
         $response = $this->actingAs($customer)->get(route('services.index'));
 

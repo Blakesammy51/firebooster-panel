@@ -327,6 +327,66 @@ class PaystackDepositSecurityTest extends TestCase
         }
     }
 
+    public function test_callback_and_webhook_together_credit_a_successful_deposit_only_once(): void
+    {
+        config(['services.paystack.webhook_secret' => 'whsec_test_signing_secret']);
+
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $wallet = Wallet::query()->create([
+            'user_id' => $user->id,
+            'balance_kobo' => 15000,
+            'currency' => 'NGN',
+        ]);
+        $transaction = WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $user->id,
+            'type' => 'deposit',
+            'amount_kobo' => 50000,
+            'currency' => 'NGN',
+            'status' => 'pending',
+            'reference' => 'FB-callback-webhook-once',
+            'description' => 'Wallet deposit via Paystack',
+            'metadata' => ['gateway' => 'paystack'],
+        ]);
+        $verifiedPayment = [
+            'id' => 987654,
+            'status' => 'success',
+            'reference' => $transaction->reference,
+            'amount' => 50000,
+            'currency' => 'NGN',
+            'metadata' => [
+                'user_id' => $user->id,
+                'wallet_transaction_id' => $transaction->id,
+            ],
+        ];
+
+        $this->mock(PaystackGateway::class, function ($mock) use ($transaction, $verifiedPayment) {
+            $mock->shouldReceive('verify')->once()
+                ->with($transaction->reference)
+                ->andReturn($verifiedPayment);
+        });
+
+        $this->actingAs($user)
+            ->get(route('wallet.deposit.callback', ['reference' => $transaction->reference]))
+            ->assertRedirect(route('wallet.index'));
+
+        $webhookBody = json_encode([
+            'event' => 'charge.success',
+            'data' => $verifiedPayment,
+        ], JSON_THROW_ON_ERROR);
+
+        $this->sendSignedWebhook($webhookBody)->assertOk();
+
+        $this->assertDatabaseHas('wallets', [
+            'id' => $wallet->id,
+            'balance_kobo' => 65000,
+        ]);
+        $this->assertDatabaseHas('wallet_transactions', [
+            'id' => $transaction->id,
+            'status' => 'completed',
+        ]);
+    }
+
     private function sendSignedWebhook(string $body)
     {
         $timestamp = time();

@@ -50,7 +50,7 @@ class OrderController extends Controller
                 default => 3,
             };
             $message = match ($status) {
-                'pending' => 'Your payment is recorded. This order is waiting for manual review and has not yet been sent for fulfilment.',
+                'pending' => 'Your payment is recorded. This order is awaiting fulfilment confirmation.',
                 'awaiting_payment' => 'This order is waiting for payment confirmation. It will move forward once payment is verified.',
                 'processing' => 'Your order has been accepted for fulfilment. Progress is shown when an update is available.',
                 'completed' => 'Your order has been marked as completed.',

@@ -104,6 +104,7 @@ class ServiceController extends Controller
         $services = $servicesQuery->orderBy('platform')->orderBy('name')->paginate(15)->withQueryString();
         $services->getCollection()->transform(function (Service $service) {
             $name = html_entity_decode((string) $service->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $originalName = $name;
             $speed = null;
             $startTime = null;
 
@@ -119,7 +120,7 @@ class ServiceController extends Controller
             $name = preg_replace('/\(\s*[^)]*?No\s+Refill\s*\)/iu', ' ', $name);
             $name = preg_replace('/\s{2,}/u', ' ', trim($name));
 
-            $service->setAttribute('display_name', $name);
+            $service->setAttribute('display_name', $originalName);
             $service->setAttribute('display_speed', $speed);
             $service->setAttribute('display_start_time', $startTime);
             $service->setAttribute('display_description', html_entity_decode((string) $service->description, ENT_QUOTES | ENT_HTML5, 'UTF-8'));

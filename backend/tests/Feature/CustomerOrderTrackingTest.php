@@ -175,7 +175,7 @@ class CustomerOrderTrackingTest extends TestCase
         $response = $this->actingAs($customer)->get(route('services.index'));
 
         $response->assertOk()
-            ->assertSee('Facebook Page &amp; Profile Followers')
+            ->assertSee('Facebook Page & Profile Followers')
             ->assertSee('Speed')
             ->assertSee('Up To 300K/Day')
             ->assertSee('Start time')

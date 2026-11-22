@@ -364,6 +364,7 @@ class PaystackDepositSecurityTest extends TestCase
             $mock->shouldReceive('verify')->once()
                 ->with($transaction->reference)
                 ->andReturn($verifiedPayment);
+            $mock->shouldReceive('validWebhookSignature')->once()->andReturn(true);
         });
 
         $this->actingAs($user)

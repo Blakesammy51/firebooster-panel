@@ -101,8 +101,34 @@ class ServiceController extends Controller
             });
         }
 
+        $services = $servicesQuery->orderBy('platform')->orderBy('name')->paginate(15)->withQueryString();
+        $services->getCollection()->transform(function (Service $service) {
+            $name = html_entity_decode((string) $service->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $speed = null;
+            $startTime = null;
+
+            $name = preg_replace_callback('/\(\s*⚡\s*Speed\s*:\s*([^)]*?)\s*\)/iu', function ($matches) use (&$speed) {
+                $speed = trim($matches[1]);
+                return ' ';
+            }, $name);
+            $name = preg_replace_callback('/\(\s*[⌛⏳]\s*Start\s*Time\s*:\s*([^)]*?)\s*\)/iu', function ($matches) use (&$startTime) {
+                $startTime = trim($matches[1]);
+                return ' ';
+            }, $name);
+            $name = preg_replace('/\(\s*(?:♻️?\s*)?Refill\s*:\s*[^)]*\)/iu', ' ', $name);
+            $name = preg_replace('/\(\s*❌\s*No\s*Refill\s*\)/iu', ' ', $name);
+            $name = preg_replace('/\s{2,}/u', ' ', trim($name));
+
+            $service->setAttribute('display_name', $name);
+            $service->setAttribute('display_speed', $speed);
+            $service->setAttribute('display_start_time', $startTime);
+            $service->setAttribute('display_description', html_entity_decode((string) $service->description, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+            return $service;
+        });
+
         return view('services.index', [
-            'services' => $servicesQuery->orderBy('platform')->orderBy('name')->paginate(15)->withQueryString(),
+            'services' => $services,
             'wallet' => $wallet,
             'platforms' => $platforms,
             'platformMap' => $platformMap,

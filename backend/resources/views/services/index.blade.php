@@ -82,25 +82,62 @@
     @if ($service->provider_refill || $service->provider_cancel)
     <div class="mt-3 flex flex-wrap gap-2">@if($service->provider_refill)<span class="rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-300">Refill available</span>@endif @if($service->provider_cancel)<span class="rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-300">Cancellation supported</span>@endif</div>
     @endif
-    <form id="order-form-{{ $service->id }}" class="order-form mt-5 space-y-3" method="POST" action="{{ route('orders.store') }}" data-service-name="{{ $service->name }}" data-price-per-1000="{{ (float) $service->price_per_1000 }}" data-wallet-kobo="{{ $wallet->balance_kobo }}">
-        @csrf<input type="hidden" name="service_id" value="{{ $service->id }}">
-        <label class="block text-sm">Target URL<input required type="url" name="target_url" placeholder="https://..." class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3"></label>
-        <label class="block text-sm">Quantity<input class="quantity-input mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-3" required type="number" name="quantity" min="{{ $service->minimum_quantity }}" max="{{ $service->maximum_quantity }}" value="{{ $service->minimum_quantity }}" step="1"></label>
-        <div class="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm">
-            <div class="flex justify-between gap-3"><span class="text-slate-400">Estimated charge</span><strong class="order-total text-lg text-emerald-300">₦0.00</strong></div>
-            <div class="mt-2 flex justify-between gap-3"><span class="text-slate-400">Wallet balance</span><span>₦{{ number_format($wallet->balance_kobo / 100, 2) }}</span></div>
-            <div class="mt-2 flex justify-between gap-3"><span class="text-slate-400">Balance after order</span><strong class="balance-after">—</strong></div>
-            <p class="order-feedback mt-3 text-xs text-slate-400" aria-live="polite">Charge updates when you change the quantity. The server confirms the final amount.</p>
-        </div>
-        <button class="w-full rounded-lg bg-violet-600 px-4 py-3 font-semibold">Submit order</button>
-    </form>
+    <button
+        type="button"
+        class="select-service-button mt-5 w-full rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300"
+        data-service-id="{{ $service->id }}"
+        data-service-name="{{ $service->name }}"
+        data-service-description="{{ $service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.') ? $service->description : '' }}"
+        data-price-per-1000="{{ (float) $service->price_per_1000 }}"
+        data-minimum="{{ $service->minimum_quantity }}"
+        data-maximum="{{ $service->maximum_quantity }}"
+        data-refill="{{ $service->provider_refill ? 'Yes' : 'No' }}"
+        data-cancel="{{ $service->provider_cancel ? 'Yes' : 'No' }}"
+        aria-controls="selected-order-panel"
+        aria-expanded="false"
+    >Select service</button>
 </article>
 @empty
 <p class="rounded-xl border border-slate-800 p-6 text-slate-400 md:col-span-2">No matching services are available. Try another platform or search term.</p>
 @endforelse
 </div>
+
+<section id="selected-order-panel" class="mt-6 hidden rounded-2xl border border-violet-500/40 bg-slate-900 p-5 shadow-xl sm:p-6" aria-labelledby="selected-service-title" hidden>
+    <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-violet-300">Selected service</p>
+            <h2 id="selected-service-title" class="mt-2 text-xl font-bold">Choose a service above</h2>
+            <p id="selected-service-description" class="mt-2 hidden text-sm text-slate-400"></p>
+            <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                <span id="selected-service-refill" class="hidden rounded-md bg-slate-800 px-2 py-1 text-slate-300"></span>
+                <span id="selected-service-cancel" class="hidden rounded-md bg-slate-800 px-2 py-1 text-slate-300"></span>
+            </div>
+        </div>
+        <button id="change-selected-service" type="button" class="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-violet-400 hover:text-white">Choose another service</button>
+    </div>
+
+    <form id="selected-order-form" method="POST" action="{{ route('orders.store') }}" class="space-y-4" data-wallet-kobo="{{ $wallet->balance_kobo }}">
+        @csrf
+        <input id="selected-service-id" type="hidden" name="service_id" value="{{ old('service_id') }}">
+        <label class="block text-sm font-medium text-slate-200" for="selected-target-url">Target URL
+            <input id="selected-target-url" required type="url" name="target_url" value="{{ old('target_url') }}" placeholder="https://..." class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none">
+        </label>
+        <label class="block text-sm font-medium text-slate-200" for="selected-quantity">Quantity
+            <input id="selected-quantity" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white focus:border-violet-500 focus:outline-none" required type="number" name="quantity" min="1" max="1" value="{{ old('quantity') }}" step="1">
+            <span id="selected-quantity-limits" class="mt-1 block text-xs text-slate-400">Select a service to see its quantity limits.</span>
+        </label>
+        <div class="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm">
+            <div class="flex justify-between gap-3"><span class="text-slate-400">Price per 1,000</span><strong id="selected-unit-price" class="text-slate-200">—</strong></div>
+            <div class="mt-3 flex justify-between gap-3"><span class="text-slate-400">Estimated charge</span><strong id="selected-order-total" class="text-lg text-emerald-300">—</strong></div>
+            <div class="mt-2 flex justify-between gap-3"><span class="text-slate-400">Wallet balance</span><span>₦{{ number_format($wallet->balance_kobo / 100, 2) }}</span></div>
+            <div class="mt-2 flex justify-between gap-3"><span class="text-slate-400">Balance after order</span><strong id="selected-balance-after">—</strong></div>
+            <p id="selected-order-feedback" class="mt-3 text-xs text-slate-400" aria-live="polite">Choose a service and enter a quantity to see your estimate.</p>
+        </div>
+        <button id="selected-submit" type="submit" class="w-full rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" disabled>Place order</button>
+    </form>
+</section>
 @if ($services->count() > 0)
-<div id="sticky-order-summary" class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-700 bg-slate-950/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur md:hidden">
+<div id="sticky-order-summary" class="fixed inset-x-0 bottom-0 z-40 hidden border-t border-slate-700 bg-slate-950/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur md:hidden" hidden>
     <div class="mx-auto max-w-5xl">
         <div class="flex items-center justify-between gap-4">
             <div class="min-w-0">
@@ -112,9 +149,9 @@
                 <p class="text-[10px] text-slate-400">Estimated total</p>
                 <p id="sticky-order-total" class="text-lg font-bold text-emerald-300">—</p>
             </div>
-            <button id="sticky-submit" type="submit" form="order-form-{{ $services->first()->id }}" class="shrink-0 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40">Place order</button>
+            <button id="sticky-submit" type="submit" form="selected-order-form" class="shrink-0 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40" disabled>Place order</button>
         </div>
-        <p id="sticky-order-feedback" class="mt-2 text-[10px] text-slate-400" aria-live="polite">Choose a quantity to see your order total.</p>
+        <p id="sticky-order-feedback" class="mt-2 text-[10px] text-slate-400" aria-live="polite">Select a service to begin.</p>
     </div>
 </div>
 @endif
@@ -123,61 +160,152 @@
 <p class="mt-8 text-xs text-amber-300">Orders are paid from your wallet and placed in the manual review queue. They are not automatically sent to a provider yet.</p>
 </main>
 <script>
-const stickyName = document.getElementById('sticky-service-name');
-const stickyTotal = document.getElementById('sticky-order-total');
-const stickyBalance = document.getElementById('sticky-balance-after');
-const stickyFeedback = document.getElementById('sticky-order-feedback');
-const stickySubmit = document.getElementById('sticky-submit');
-let activeOrderForm = document.querySelector('.order-form');
-if (activeOrderForm) {
-    if (stickyName) stickyName.textContent = activeOrderForm.getAttribute('data-service-name') || 'Selected service';
-    if (stickySubmit) stickySubmit.setAttribute('form', activeOrderForm.id);
-}
+(() => {
+    const panel = document.getElementById('selected-order-panel');
+    const form = document.getElementById('selected-order-form');
+    if (!panel || !form) return;
 
-document.querySelectorAll('.order-form').forEach((form) => {
-    const quantity = form.querySelector('.quantity-input');
-    const total = form.querySelector('.order-total');
-    const balanceAfter = form.querySelector('.balance-after');
-    const feedback = form.querySelector('.order-feedback');
-    const pricePer1000 = Number.parseFloat(form.getAttribute('data-price-per-1000'));
-    const walletKobo = Number.parseInt(form.getAttribute('data-wallet-kobo'), 10);
-    const money = (kobo) => '₦' + (kobo / 100).toFixed(2);
-    const activateForm = () => {
-        activeOrderForm = form;
-        if (stickyName) stickyName.textContent = form.getAttribute('data-service-name') || 'Selected service';
-        if (stickySubmit) stickySubmit.setAttribute('form', form.id);
+    const serviceId = document.getElementById('selected-service-id');
+    const serviceTitle = document.getElementById('selected-service-title');
+    const serviceDescription = document.getElementById('selected-service-description');
+    const refillBadge = document.getElementById('selected-service-refill');
+    const cancelBadge = document.getElementById('selected-service-cancel');
+    const quantity = document.getElementById('selected-quantity');
+    const quantityLimits = document.getElementById('selected-quantity-limits');
+    const unitPrice = document.getElementById('selected-unit-price');
+    const total = document.getElementById('selected-order-total');
+    const balanceAfter = document.getElementById('selected-balance-after');
+    const feedback = document.getElementById('selected-order-feedback');
+    const submit = document.getElementById('selected-submit');
+    const sticky = document.getElementById('sticky-order-summary');
+    const stickyName = document.getElementById('sticky-service-name');
+    const stickyTotal = document.getElementById('sticky-order-total');
+    const stickyBalance = document.getElementById('sticky-balance-after');
+    const stickyFeedback = document.getElementById('sticky-order-feedback');
+    const stickySubmit = document.getElementById('sticky-submit');
+    const targetUrl = document.getElementById('selected-target-url');
+    const walletKobo = Number.parseInt(form.dataset.walletKobo, 10);
+    let selectedService = null;
+
+    const money = (kobo) => '₦' + (kobo / 100).toLocaleString('en-NG', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    const setMessage = (message, tone = 'muted') => {
+        feedback.textContent = message;
+        feedback.className = 'mt-3 text-xs ' + (tone === 'error' ? 'text-red-300' : tone === 'warning' ? 'text-amber-300' : 'text-slate-400');
+        stickyFeedback.textContent = message;
     };
+
     const updateEstimate = () => {
+        if (!selectedService) return;
         const amount = Number(quantity.value);
-        if (document.activeElement === quantity) activateForm();
-        if (!Number.isSafeInteger(amount) || !Number.isFinite(pricePer1000) || !Number.isFinite(walletKobo) || amount < Number(quantity.min) || amount > Number(quantity.max)) {
-            total.textContent = '—'; balanceAfter.textContent = '—';
-            feedback.textContent = 'Enter a quantity within the allowed limits.';
-            feedback.className = 'order-feedback mt-3 text-xs text-amber-300';
-            if (stickyTotal) stickyTotal.textContent = '—';
-            if (stickyBalance) stickyBalance.textContent = '—';
-            if (stickyFeedback) stickyFeedback.textContent = 'Enter a valid quantity within the service limits.';
-            if (stickySubmit) stickySubmit.disabled = true;
+        const validQuantity = Number.isSafeInteger(amount)
+            && amount >= selectedService.minimum
+            && amount <= selectedService.maximum;
+        if (!validQuantity) {
+            total.textContent = '—';
+            balanceAfter.textContent = '—';
+            balanceAfter.className = '';
+            stickyTotal.textContent = '—';
+            stickyBalance.textContent = '—';
+            setMessage('Enter a whole-number quantity between ' + selectedService.minimum.toLocaleString() + ' and ' + selectedService.maximum.toLocaleString() + '.', 'warning');
+            submit.disabled = true;
+            stickySubmit.disabled = true;
             return;
         }
-        const unitPriceKobo = Math.round(pricePer1000 * 100);
-        const totalKobo = Math.floor((unitPriceKobo * amount + 500) / 1000);
+
+        const unitPriceKobo = Math.round(selectedService.pricePer1000 * 100);
+        const totalKobo = Math.round((unitPriceKobo * amount) / 1000);
         const remainingKobo = walletKobo - totalKobo;
-        total.textContent = money(totalKobo); balanceAfter.textContent = money(remainingKobo);
-        balanceAfter.className = remainingKobo < 0 ? 'balance-after text-red-300' : 'balance-after text-emerald-300';
-        feedback.textContent = remainingKobo < 0 ? 'Your wallet balance is too low for this order.' : 'Estimated amount only. The server recalculates the final charge before payment.';
-        feedback.className = remainingKobo < 0 ? 'order-feedback mt-3 text-xs text-red-300' : 'order-feedback mt-3 text-xs text-slate-400';
-        if (activeOrderForm === form) {
-            if (stickyTotal) stickyTotal.textContent = money(totalKobo);
-            if (stickyBalance) stickyBalance.textContent = money(remainingKobo);
-            if (stickyBalance) stickyBalance.className = remainingKobo < 0 ? 'text-red-300' : 'text-emerald-300';
-            if (stickyFeedback) stickyFeedback.textContent = remainingKobo < 0 ? 'Insufficient wallet balance for this quantity.' : 'Final charge is recalculated securely by the server.';
-            if (stickySubmit) stickySubmit.disabled = remainingKobo < 0;
+        total.textContent = money(totalKobo);
+        balanceAfter.textContent = money(remainingKobo);
+        balanceAfter.className = remainingKobo < 0 ? 'text-red-300' : 'text-emerald-300';
+        stickyTotal.textContent = money(totalKobo);
+        stickyBalance.textContent = money(remainingKobo);
+        stickyBalance.className = remainingKobo < 0 ? 'text-red-300' : 'text-emerald-300';
+
+        if (remainingKobo < 0) {
+            setMessage('Your wallet balance is too low for this order.', 'error');
+            submit.disabled = true;
+            stickySubmit.disabled = true;
+        } else {
+            setMessage('Estimated amount only. The server recalculates the final charge securely.', 'muted');
+            submit.disabled = false;
+            stickySubmit.disabled = false;
         }
     };
-    form.addEventListener('focusin', () => { activateForm(); updateEstimate(); });
+
+    const selectService = (button, shouldScroll = true) => {
+        selectedService = {
+            id: button.dataset.serviceId,
+            name: button.dataset.serviceName,
+            description: button.dataset.serviceDescription || '',
+            pricePer1000: Number.parseFloat(button.dataset.pricePer1000),
+            minimum: Number.parseInt(button.dataset.minimum, 10),
+            maximum: Number.parseInt(button.dataset.maximum, 10),
+            refill: button.dataset.refill === 'Yes',
+            cancel: button.dataset.cancel === 'Yes'
+        };
+
+        serviceId.value = selectedService.id;
+        serviceTitle.textContent = selectedService.name;
+        serviceDescription.textContent = selectedService.description;
+        serviceDescription.classList.toggle('hidden', !selectedService.description);
+        refillBadge.textContent = 'Refill available';
+        refillBadge.classList.toggle('hidden', !selectedService.refill);
+        cancelBadge.textContent = 'Cancellation supported';
+        cancelBadge.classList.toggle('hidden', !selectedService.cancel);
+        quantity.min = String(selectedService.minimum);
+        quantity.max = String(selectedService.maximum);
+        quantity.value = String(selectedService.minimum);
+        quantityLimits.textContent = 'Minimum: ' + selectedService.minimum.toLocaleString() + ' · Maximum: ' + selectedService.maximum.toLocaleString();
+        unitPrice.textContent = '₦' + selectedService.pricePer1000.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' per 1,000';
+        stickyName.textContent = selectedService.name;
+
+        document.querySelectorAll('.select-service-button').forEach((item) => {
+            const isSelected = item === button;
+            item.textContent = isSelected ? 'Selected service' : 'Select service';
+            item.setAttribute('aria-expanded', isSelected ? 'true' : 'false');
+            item.classList.toggle('ring-2', isSelected);
+            item.classList.toggle('ring-violet-300', isSelected);
+            item.classList.toggle('bg-slate-700', isSelected);
+            item.classList.toggle('bg-violet-600', !isSelected);
+        });
+
+        panel.hidden = false;
+        panel.classList.remove('hidden');
+        sticky.hidden = false;
+        sticky.classList.remove('hidden');
+        updateEstimate();
+
+        if (shouldScroll) {
+            panel.scrollIntoView({behavior: 'smooth', block: 'start'});
+            window.setTimeout(() => targetUrl.focus({preventScroll: true}), 350);
+        }
+    };
+
+    document.querySelectorAll('.select-service-button').forEach((button) => {
+        button.addEventListener('click', () => selectService(button));
+    });
+
+    document.getElementById('change-selected-service').addEventListener('click', () => {
+        document.querySelector('.select-service-button')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+    });
+
     quantity.addEventListener('input', updateEstimate);
-    updateEstimate();
-});
+
+    const previouslySelectedId = @json((string) old('service_id', ''));
+    if (previouslySelectedId) {
+        const previousButton = Array.from(document.querySelectorAll('.select-service-button'))
+            .find((button) => button.dataset.serviceId === previouslySelectedId);
+        if (previousButton) {
+            selectService(previousButton, false);
+            if (@json((string) old('quantity', ''))) quantity.value = @json((string) old('quantity', ''));
+            updateEstimate();
+        }
+    }
+})();
 </script>
 </body></html>

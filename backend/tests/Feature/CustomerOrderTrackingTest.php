@@ -105,4 +105,35 @@ class CustomerOrderTrackingTest extends TestCase
         $this->assertSame(8, substr_count($response->getContent(), 'bg-emerald-700 text-white'));
     }
 
+
+    public function test_customer_must_select_a_service_before_the_single_order_form_is_shown(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $this->createSupplierService();
+
+        Service::query()->create([
+            'name' => 'Instagram Likes',
+            'platform' => 'Instagram',
+            'category' => 'Likes',
+            'provider' => 'smm_center',
+            'provider_service_id' => '27552',
+            'description' => 'Supplier-backed likes service.',
+            'price_per_1000' => '1200.00',
+            'minimum_quantity' => 10,
+            'maximum_quantity' => 50000,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($customer)->get(route('services.index'));
+
+        $response->assertOk()
+            ->assertSee('Select service')
+            ->assertSee('id="selected-order-panel"', false)
+            ->assertSee('id="selected-order-form"', false)
+            ->assertDontSee('id="order-form-', false);
+
+        $this->assertSame(2, substr_count($response->getContent(), 'class="select-service-button'));
+        $this->assertSame(2, substr_count($response->getContent(), '<form'));
+    }
+
 }

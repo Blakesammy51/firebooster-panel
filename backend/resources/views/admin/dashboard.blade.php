@@ -34,33 +34,45 @@
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wide text-violet-300">Supplier account</p>
                 <h2 id="supplier-balance-heading" class="mt-1 text-xl font-semibold">SMM Center balance</h2>
-                <p class="mt-1 text-sm text-slate-400">Refresh to retrieve the live balance directly from SMM Center.</p>
+                <p class="mt-1 text-sm text-slate-400">Automatically checked hourly, with manual refresh available.</p>
             </div>
             <form method="POST" action="{{ route('admin.dashboard.supplier-balance.refresh') }}">
                 @csrf
-                <button type="submit" class="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300">
-                    Refresh balance
-                </button>
+                <button type="submit" class="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300">Refresh balance</button>
             </form>
         </div>
 
-        @if ($balance = session('supplier_balance'))
-            <div class="mt-5 rounded-xl border {{ $balance['is_low'] ? 'border-amber-700 bg-amber-950/30' : 'border-emerald-800 bg-emerald-950/30' }} p-4" role="status">
-                <p class="text-sm {{ $balance['is_low'] ? 'text-amber-200' : 'text-emerald-200' }}">Current supplier balance</p>
-                <p class="mt-1 text-3xl font-bold">{{ $balance['currency'] }} {{ number_format($balance['amount'], 4) }}</p>
-                @if ($balance['is_low'])
+        @if ($latestSuccessfulBalance)
+            <div class="mt-5 rounded-xl border {{ $latestSuccessfulBalance->currency === 'USD' && (float) $latestSuccessfulBalance->amount < 5 ? 'border-amber-700 bg-amber-950/30' : 'border-emerald-800 bg-emerald-950/30' }} p-4">
+                <p class="text-sm text-slate-300">Last successful supplier balance</p>
+                <p class="mt-1 text-3xl font-bold">{{ $latestSuccessfulBalance->currency }} {{ number_format((float) $latestSuccessfulBalance->amount, 4) }}</p>
+                @if ($latestSuccessfulBalance->currency === 'USD' && (float) $latestSuccessfulBalance->amount < 5)
                     <p class="mt-2 text-sm text-amber-200">Low balance warning: below the $5.00 USD reminder threshold. Review your supplier funds before submitting more orders.</p>
                 @endif
-                <p class="mt-2 text-xs text-slate-400">Last checked: {{ $balance['checked_at'] }}</p>
+                <p class="mt-2 text-xs text-slate-400">Last successful check: {{ $latestSuccessfulBalance->checked_at->format('Y-m-d H:i:s') }}</p>
             </div>
         @else
-            <p class="mt-5 rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-sm text-slate-300">Balance has not been checked in this session. Use Refresh balance to request the latest supplier balance.</p>
+            <p class="mt-5 rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-sm text-slate-300">No successful balance check has been recorded yet.</p>
         @endif
 
+        @if ($latestBalanceCheck)
+            <p class="mt-3 text-xs {{ $latestBalanceCheck->status === 'success' ? 'text-emerald-300' : 'text-amber-300' }}">
+                Latest monitor attempt: {{ $latestBalanceCheck->status }} · {{ $latestBalanceCheck->checked_at->format('Y-m-d H:i:s') }}
+            </p>
+            @if ($latestBalanceCheck->status === 'failed')
+                <p class="mt-1 text-sm text-amber-200">{{ $latestBalanceCheck->error_message }}</p>
+            @endif
+        @else
+            <p class="mt-3 text-xs text-slate-500">Automatic monitoring has not completed its first check yet.</p>
+        @endif
+
+        @if (session('status'))
+            <p class="mt-3 text-sm text-emerald-300" role="status">{{ session('status') }}</p>
+        @endif
         @error('supplier_balance')
             <p class="mt-4 rounded-lg border border-rose-800 bg-rose-950/30 p-3 text-sm text-rose-200" role="alert">{{ $message }}</p>
         @enderror
-        <p class="mt-3 text-xs text-slate-500">Read-only monitor. Firebooster will never deposit, withdraw, or change your supplier balance.</p>
+        <p class="mt-3 text-xs text-slate-500">Read-only monitor. Firebooster will never deposit, withdraw, or change your supplier balance. Scheduled checks depend on the hosting scheduler being awake.</p>
     </section>
 
     <section class="mt-8">

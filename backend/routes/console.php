@@ -10,3 +10,7 @@ Artisan::command('firebooster:status', function () {
 Schedule::command('smm-center:sync-order-statuses')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('smm-center:check-balance')
+    ->hourly()
+    ->withoutOverlapping();

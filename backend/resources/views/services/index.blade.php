@@ -52,21 +52,25 @@
             </a>
         @endforeach
     </div>
-    <form method="GET" action="{{ route('services.index') }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+    <form method="GET" action="{{ route('services.index') }}" class="mt-4 space-y-3">
         @if ($selectedPlatform !== '')<input type="hidden" name="platform" value="{{ $selectedPlatform }}">@endif
-        @if ($selectedCategory !== '')<input type="hidden" name="category" value="{{ $selectedCategory }}">@endif
-        <label class="sr-only" for="catalogue-search">Quick search by service name or ID</label>
-        <input id="catalogue-search" type="search" name="q" value="{{ $search }}" placeholder="Quick search by service name or ID…" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none">
-        <button class="rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white">Search</button>
+        <label class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Quick search</span>
+            <input id="catalogue-search" type="search" name="q" value="{{ $search }}" placeholder="Search by service name or ID…" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none">
+        </label>
+        <div class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <label class="block">
+                <span class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-400">Browse category</span>
+                <select id="catalogue-category" name="category" class="w-full appearance-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white focus:border-violet-500 focus:outline-none">
+                    <option value="">All categories</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category }}" {{ mb_strtolower($selectedCategory) === mb_strtolower($category) ? 'selected' : '' }}>{{ $category }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <button class="rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-violet-500">Search</button>
+        </div>
     </form>
-    @if ($categories->isNotEmpty())
-    <div class="mt-4 flex flex-wrap gap-2">
-        <a href="{{ route('services.index', array_filter(['platform' => $selectedPlatform ?: null, 'q' => $search ?: null])) }}" class="rounded-lg px-3 py-2 text-xs {{ $selectedCategory === '' ? 'bg-slate-700 text-white' : 'bg-slate-950 text-slate-300 ring-1 ring-slate-700' }}">All categories</a>
-        @foreach ($categories as $category)
-            <a href="{{ route('services.index', array_filter(['platform' => $selectedPlatform ?: null, 'category' => $category, 'q' => $search ?: null])) }}" class="rounded-lg px-3 py-2 text-xs {{ mb_strtolower($selectedCategory) === mb_strtolower($category) ? 'bg-slate-700 text-white' : 'bg-slate-950 text-slate-300 ring-1 ring-slate-700' }}">{{ $category }}</a>
-        @endforeach
-    </div>
-    @endif
 </section>
 
 <div class="mb-4 flex items-center justify-between gap-3"><h2 class="text-lg font-semibold">{{ $selectedPlatform !== '' ? $selectedPlatform : 'All services' }}</h2><span class="text-xs text-slate-400">{{ $services->total() }} available</span></div>
@@ -315,5 +319,7 @@
         }
     }
 })();
+    const categorySelect = document.getElementById('catalogue-category');
+    categorySelect?.addEventListener('change', () => categorySelect.form.requestSubmit());
 </script>
 </body></html>

@@ -128,6 +128,7 @@ class CustomerOrderTrackingTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Select service')
+            ->assertSee('data-price-per-1000="3500.00"', false)
             ->assertSee('id="selected-order-panel"', false)
             ->assertSee('id="selected-order-form"', false)
             ->assertDontSee('id="order-form-', false);

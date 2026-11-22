@@ -159,16 +159,20 @@ class CustomerOrderTrackingTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Browse category')
-            ->assertSee('id="catalogue-category"', false)
-            ->assertSee('<option value="">All categories</option>', false)
-            ->assertSee('<option value="Instagram Followers"', false)
-            ->assertSee('<option value="Facebook Video Views"', false)
-            ->assertDontSee('All categories</a>', false);
+            ->assertSee('id="category-picker-trigger"', false)
+            ->assertSee('id="category-picker-panel"', false)
+            ->assertSee('id="category-picker-search"', false)
+            ->assertSee('data-category-name="All categories"', false)
+            ->assertSee('data-category-name="Instagram Followers"', false)
+            ->assertSee('data-category-name="Facebook Video Views"', false)
+            ->assertSee('data-category-platform="Instagram"', false)
+            ->assertSee('data-category-platform="Facebook"', false)
+            ->assertDontSee('id="catalogue-category"', false);
 
         $facebookResponse = $this->actingAs($customer)->get(route('services.index', ['platform' => 'Facebook']));
         $facebookResponse->assertOk()
-            ->assertSee('<option value="Facebook Video Views"', false)
-            ->assertDontSee('<option value="Instagram Followers"', false);
+            ->assertSee('data-category-name="Facebook Video Views"', false)
+            ->assertDontSee('data-category-name="Instagram Followers"', false);
     }
 
 }

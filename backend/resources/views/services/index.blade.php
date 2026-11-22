@@ -161,6 +161,11 @@
         <label class="block text-sm font-medium text-slate-200" for="selected-quantity">Quantity
             <input id="selected-quantity" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white focus:border-violet-500 focus:outline-none" required type="number" name="quantity" min="1" max="1" value="{{ old('quantity') }}" step="1">
             <span id="selected-quantity-limits" class="mt-1 block text-xs text-slate-400">Select a service to see its quantity limits.</span>
+            <div id="quantity-presets" class="mt-3 flex flex-wrap gap-2" aria-label="Quick quantity choices">
+                <button type="button" data-quantity-preset="1000" class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-violet-500 hover:text-white">1,000</button>
+                <button type="button" data-quantity-preset="5000" class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-violet-500 hover:text-white">5,000</button>
+                <button type="button" data-quantity-preset="10000" class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-violet-500 hover:text-white">10,000</button>
+            </div>
         </label>
         <div class="rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm">
             <div class="flex justify-between gap-3"><span class="text-slate-400">Price per 1,000</span><strong id="selected-unit-price" class="text-slate-200">—</strong></div>
@@ -339,6 +344,15 @@
     });
 
     quantity.addEventListener('input', updateEstimate);
+    document.querySelectorAll('[data-quantity-preset]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!selectedService) return;
+            const preset = Number.parseInt(button.dataset.quantityPreset, 10);
+            if (preset < selectedService.minimum || preset > selectedService.maximum) return;
+            quantity.value = String(preset);
+            updateEstimate();
+        });
+    });
 
     const previouslySelectedId = @json((string) old('service_id', ''));
     if (previouslySelectedId) {

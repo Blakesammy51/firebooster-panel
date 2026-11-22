@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Service;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Services\SubmitSmmCenterOrder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -169,7 +170,15 @@ class OrderController extends Controller
             throw $exception;
         }
 
-        return redirect()->route('orders.index')
-            ->with('status', 'Order #' . $order->id . ' placed and paid from your wallet. It is awaiting manual review and has not been sent to a provider.');
+        $fulfilment = app(SubmitSmmCenterOrder::class)->submit($order);
+
+        $message = match ($fulfilment) {
+            'submitted' => 'Order #' . $order->id . ' placed and automatically submitted to our fulfilment provider.',
+            'review_required' => 'Order #' . $order->id . ' is paid, but supplier acceptance could not be confirmed. It has been held for manual review; please do not place it again.',
+            'already_claimed' => 'Order #' . $order->id . ' is paid and already being processed.',
+            default => 'Order #' . $order->id . ' placed and paid from your wallet. It is awaiting fulfilment review.',
+        };
+
+        return redirect()->route('orders.index')->with('status', $message);
     }
 }

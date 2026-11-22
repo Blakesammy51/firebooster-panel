@@ -107,16 +107,16 @@ class ServiceController extends Controller
             $speed = null;
             $startTime = null;
 
-            $name = preg_replace_callback('/\(\s*⚡\s*Speed\s*:\s*([^)]*?)\s*\)/iu', function ($matches) use (&$speed) {
+            $name = preg_replace_callback('/\(\s*[^)]*?Speed\s*:\s*([^)]*?)\s*\)/iu', function ($matches) use (&$speed) {
                 $speed = trim($matches[1]);
                 return ' ';
             }, $name);
-            $name = preg_replace_callback('/\(\s*[⌛⏳]\s*Start\s*Time\s*:\s*([^)]*?)\s*\)/iu', function ($matches) use (&$startTime) {
+            $name = preg_replace_callback('/\(\s*[^)]*?Start\s*Time\s*:\s*([^)]*?)\s*\)/iu', function ($matches) use (&$startTime) {
                 $startTime = trim($matches[1]);
                 return ' ';
             }, $name);
-            $name = preg_replace('/\(\s*(?:♻️?\s*)?Refill\s*:\s*[^)]*\)/iu', ' ', $name);
-            $name = preg_replace('/\(\s*❌\s*No\s*Refill\s*\)/iu', ' ', $name);
+            $name = preg_replace('/\(\s*[^)]*?Refill\s*:\s*[^)]*\)/iu', ' ', $name);
+            $name = preg_replace('/\(\s*[^)]*?No\s+Refill\s*\)/iu', ' ', $name);
             $name = preg_replace('/\s{2,}/u', ' ', trim($name));
 
             $service->setAttribute('display_name', $name);

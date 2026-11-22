@@ -1,17 +1,17 @@
 <?php
 
-namespace App\\Services;
+namespace App\Services;
 
-use App\\Models\\Order;
-use App\\Models\\WalletTransaction;
-use Illuminate\\Support\\Facades\\DB;
+use App\Models\Order;
+use App\Models\WalletTransaction;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class SubmitSmmCenterOrder
 {
     /**
-     * Submit a paid SMM Center order once. Any ambiguous supplier response is
-     * deliberately left locked for manual reconciliation; never auto-retry it.
+     * Submit a paid SMM Center order once. Ambiguous supplier responses remain
+     * locked for manual reconciliation; this service never automatically retries.
      */
     public function submit(Order $order): string
     {
@@ -54,7 +54,7 @@ class SubmitSmmCenterOrder
             DB::transaction(function () use ($order, $response) {
                 $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
                 if ($locked->provider_status !== 'submission_in_progress' || $locked->provider_order_id !== null) {
-                    throw new \\RuntimeException('Supplier submission claim changed unexpectedly.');
+                    throw new \RuntimeException('Supplier submission claim changed unexpectedly.');
                 }
 
                 $locked->update([
@@ -66,18 +66,19 @@ class SubmitSmmCenterOrder
                         'Paid from wallet. Awaiting manual review; not submitted to a provider.',
                         'Paid from wallet.',
                         (string) $locked->notes
-                    ) . "\\n" . 'Submitted to SMM Center. Provider order ID: ' . $response['order']),
+                    ) . "\n" . 'Submitted to SMM Center. Provider order ID: ' . $response['order']),
                 ]);
             });
 
             return 'submitted';
         } catch (Throwable $exception) {
-            Order::query()->whereKey($order->id)
-                ->whereNull('provider_order_id')
-                ->update([
-                    'provider_status' => 'submission_failed_review_required',
-                    'notes' => DB::raw("TRIM(CONCAT(COALESCE(notes, ''), '\\nProvider submission could not be confirmed. Check the SMM Center dashboard before taking any further action.'))"),
-                ]);
+            $failed = Order::query()->find($order->id);
+            if ($failed && $failed->provider_order_id === null) {
+                $failed->provider_status = 'submission_failed_review_required';
+                $failed->notes = trim(($failed->notes ? $failed->notes . "\n" : '')
+                    . 'Provider submission could not be confirmed. Check the SMM Center dashboard before taking any further action.');
+                $failed->save();
+            }
 
             report($exception);
 

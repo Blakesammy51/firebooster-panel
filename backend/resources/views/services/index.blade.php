@@ -108,15 +108,34 @@
 <div class="mb-4 flex items-center justify-between gap-3"><h2 class="text-lg font-semibold">{{ $selectedPlatform !== '' ? $selectedPlatform : 'All services' }}</h2><span class="text-xs text-slate-400">{{ $services->total() }} available</span></div>
 <div class="grid gap-4 md:grid-cols-2">
 @forelse ($services as $service)
-<article class="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-    <div class="flex flex-wrap items-center justify-between gap-2"><p class="text-xs font-semibold uppercase tracking-wider text-violet-300">{{ $platformMap[$service->platform] ?? $service->platform }}@if($service->category) · {{ $service->category }}@endif</p><span class="rounded-full bg-emerald-950 px-2.5 py-1 text-xs text-emerald-300">Available</span></div>
-    <h3 class="mt-2 text-lg font-bold">{{ $service->name }}</h3>
-    @if ($service->provider_service_id)<p class="mt-1 text-xs text-slate-500">Service ID: {{ $service->provider_service_id }}</p>@endif
-    @if ($service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.'))<p class="mt-2 text-sm text-slate-400">{{ $service->description }}</p>@endif
-    <p class="mt-4 text-lg font-bold text-emerald-300">₦{{ number_format((float) $service->price_per_1000, 2) }} <span class="text-xs font-normal text-slate-400">per 1,000</span></p>
-    <p class="mt-1 text-xs text-slate-400">Minimum: {{ number_format($service->minimum_quantity) }} · Maximum: {{ number_format($service->maximum_quantity) }}</p>
+<article class="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-violet-500/60 hover:shadow-xl hover:shadow-violet-950/20">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="text-xs font-semibold uppercase tracking-wider text-violet-300">{{ $platformMap[$service->platform] ?? $service->platform }}@if($service->category) · {{ $service->category }}@endif</p>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 px-2.5 py-1 text-xs font-medium text-emerald-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Available</span>
+    </div>
+    <h3 class="mt-3 text-lg font-bold leading-snug">{{ $service->name }}</h3>
+    @if ($service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.'))
+        <p class="mt-2 text-sm leading-relaxed text-slate-400">{{ $service->description }}</p>
+    @endif
+    <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+        <p class="text-xs text-slate-400">Price per 1,000</p>
+        <p class="mt-1 text-xl font-bold text-emerald-300">₦{{ number_format((float) $service->price_per_1000, 2) }}</p>
+    </div>
+    <div class="mt-3 grid grid-cols-2 gap-2">
+        <div class="rounded-lg bg-slate-800/70 px-3 py-2.5">
+            <p class="text-[11px] uppercase tracking-wide text-slate-400">Minimum order</p>
+            <p class="mt-1 text-sm font-semibold text-slate-100">{{ number_format($service->minimum_quantity) }}</p>
+        </div>
+        <div class="rounded-lg bg-slate-800/70 px-3 py-2.5">
+            <p class="text-[11px] uppercase tracking-wide text-slate-400">Maximum order</p>
+            <p class="mt-1 text-sm font-semibold text-slate-100">{{ number_format($service->maximum_quantity) }}</p>
+        </div>
+    </div>
     @if ($service->provider_refill || $service->provider_cancel)
-    <div class="mt-3 flex flex-wrap gap-2">@if($service->provider_refill)<span class="rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-300">Refill available</span>@endif @if($service->provider_cancel)<span class="rounded-md bg-slate-800 px-2 py-1 text-xs text-slate-300">Cancellation supported</span>@endif</div>
+        <div class="mt-3 flex flex-wrap gap-2">
+            @if($service->provider_refill)<span class="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-300">↻ Refill support</span>@endif
+            @if($service->provider_cancel)<span class="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-300">✓ Cancellation support</span>@endif
+        </div>
     @endif
     <button
         type="button"

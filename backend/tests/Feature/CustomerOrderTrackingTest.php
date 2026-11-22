@@ -188,6 +188,37 @@ class CustomerOrderTrackingTest extends TestCase
         $this->assertStringNotContainsString('&amp;amp;', $response->getContent());
     }
 
+    public function test_customer_service_cards_parse_supplier_metadata_with_emoji_variation_selectors(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        Service::query()->create([
+            'name' => "Facebook Video Views (❌ No Refill) (⚡️ Speed: 500K/Day) (⌛️ Start Time: 0-1 Hour)",
+            'platform' => 'Facebook',
+            'category' => 'Facebook Video Views',
+            'provider' => 'smm_center',
+            'provider_service_id' => '987655',
+            'description' => 'Imported from SMM Center.',
+            'price_per_1000' => '120.00',
+            'minimum_quantity' => 500,
+            'maximum_quantity' => 1000000,
+            'provider_refill' => false,
+            'provider_cancel' => true,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($customer)->get(route('services.index'));
+
+        $response->assertOk()
+            ->assertSee('Facebook Video Views')
+            ->assertSee('Speed')
+            ->assertSee('500K/Day')
+            ->assertSee('Start time')
+            ->assertSee('0-1 Hour')
+            ->assertDontSee('No Refill')
+            ->assertDontSee('Speed:')
+            ->assertDontSee('Start Time:');
+    }
+
     public function test_customer_catalogue_uses_a_category_dropdown_instead_of_category_chips(): void
     {
         $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);

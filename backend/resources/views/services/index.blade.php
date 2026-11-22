@@ -88,7 +88,7 @@
         data-service-id="{{ $service->id }}"
         data-service-name="{{ $service->name }}"
         data-service-description="{{ $service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.') ? $service->description : '' }}"
-        data-price-per-1000="{{ (float) $service->price_per_1000 }}"
+        data-price-per-1000="{{ number_format((float) $service->price_per_1000, 2, '.', '') }}"
         data-minimum="{{ $service->minimum_quantity }}"
         data-maximum="{{ $service->maximum_quantity }}"
         data-refill="{{ $service->provider_refill ? 'Yes' : 'No' }}"
@@ -242,14 +242,14 @@
             id: button.dataset.serviceId,
             name: button.dataset.serviceName,
             description: button.dataset.serviceDescription || '',
-            pricePer1000: Number.parseFloat(button.dataset.pricePer1000),
+            pricePer1000: Number(String(button.getAttribute('data-price-per-1000') || '').replace(/[^0-9.-]/g, '')),
             minimum: Number.parseInt(button.dataset.minimum, 10),
             maximum: Number.parseInt(button.dataset.maximum, 10),
             refill: button.dataset.refill === 'Yes',
             cancel: button.dataset.cancel === 'Yes'
         };
 
-        serviceId.value = selectedService.id;
+        if (!Number.isFinite(selectedService.pricePer1000) || selectedService.pricePer1000 <= 0) {\n            selectedService = null;\n            setMessage('This service price could not be loaded. Please refresh the page or choose another service.', 'error');\n            submit.disabled = true;\n            stickySubmit.disabled = true;\n            return;\n        }\n\n        serviceId.value = selectedService.id;
         serviceTitle.textContent = selectedService.name;
         serviceDescription.textContent = selectedService.description;
         serviceDescription.classList.toggle('hidden', !selectedService.description);

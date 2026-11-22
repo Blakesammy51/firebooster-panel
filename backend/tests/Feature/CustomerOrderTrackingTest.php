@@ -154,7 +154,7 @@ class CustomerOrderTrackingTest extends TestCase
             ->assertDontSee('Service ID:');
     }
 
-    public function test_customer_service_cards_separate_speed_and_start_time_from_clean_service_names(): void
+    public function test_customer_order_panel_preserves_supplier_metadata_and_shows_it_after_service_selection(): void
     {
         $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
         Service::query()->create([
@@ -175,16 +175,14 @@ class CustomerOrderTrackingTest extends TestCase
         $response = $this->actingAs($customer)->get(route('services.index'));
 
         $response->assertOk()
-            ->assertSee('Facebook Page & Profile Followers')
-            ->assertSee('Speed')
-            ->assertSee('Up To 300K/Day')
-            ->assertSee('Start time')
-            ->assertSee('0–3 Hours')
-            ->assertSee('Refill support')
-            ->assertSee('Cancellation support')
-            ->assertDontSee('Refill: 30 Days')
-            ->assertDontSee('Start Time:')
-            ->assertDontSee('Speed:');
+            ->assertSee('Facebook Page &amp; Profile Followers', false)
+            ->assertSee('♻️ Refill: 30 Days')
+            ->assertSee('⚡ Speed: Up To 300K/Day')
+            ->assertSee('⌛ Start Time: 0–3 Hours')
+            ->assertSee('data-speed="Up To 300K/Day"', false)
+            ->assertSee('data-start-time="0–3 Hours"', false)
+            ->assertSee('id="selected-service-speed"', false)
+            ->assertSee('id="selected-service-start-time"', false);
         $this->assertStringNotContainsString('&amp;amp;', $response->getContent());
     }
 
@@ -210,13 +208,11 @@ class CustomerOrderTrackingTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Facebook Video Views')
-            ->assertSee('Speed')
-            ->assertSee('500K/Day')
-            ->assertSee('Start time')
-            ->assertSee('0-1 Hour')
-            ->assertDontSee('No Refill')
-            ->assertDontSee('Speed:')
-            ->assertDontSee('Start Time:');
+            ->assertSee('❌ No Refill')
+            ->assertSee('⚡️ Speed: 500K/Day')
+            ->assertSee('⌛️ Start Time: 0-1 Hour')
+            ->assertSee('data-speed="500K/Day"', false)
+            ->assertSee('data-start-time="0-1 Hour"', false);
     }
 
     public function test_customer_catalogue_uses_a_category_dropdown_instead_of_category_chips(): void

@@ -404,4 +404,117 @@ class SmmCenterOrderSubmissionTest extends TestCase
 
         Http::assertNothingSent();
     }
+
+
+    private function placeFundedCustomerOrder(string $provider = 'smm_center'): array
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        $service = Service::query()->create([
+            'name' => 'Test service',
+            'platform' => 'Instagram',
+            'category' => 'Followers',
+            'provider' => $provider,
+            'provider_service_id' => $provider === 'smm_center' ? '32748' : null,
+            'description' => 'Test service.',
+            'price_per_1000' => '5.00',
+            'minimum_quantity' => 50,
+            'maximum_quantity' => 10000,
+            'is_active' => true,
+        ]);
+        $wallet = Wallet::query()->create([
+            'user_id' => $customer->id,
+            'balance_kobo' => 1000,
+            'currency' => 'NGN',
+        ]);
+
+        return [$customer, $service, $wallet];
+    }
+
+    public function test_paid_customer_order_is_automatically_submitted_to_smm_center(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+        Http::fake(['smm-center.com/api/v2' => Http::response(['order' => 7654321])]);
+        [$customer, $service, $wallet] = $this->placeFundedCustomerOrder();
+
+        $this->actingAs($customer)
+            ->post(route('orders.store'), [
+                'service_id' => $service->id,
+                'target_url' => 'https://www.instagram.com/example/',
+                'quantity' => 200,
+            ])
+            ->assertRedirect(route('orders.index'))
+            ->assertSessionHas('status', fn ($message) => str_contains($message, 'automatically submitted'));
+
+        $order = Order::query()->where('user_id', $customer->id)->firstOrFail();
+        $this->assertSame('7654321', $order->provider_order_id);
+        $this->assertSame('Submitted', $order->provider_status);
+        $this->assertSame('processing', $order->status);
+        $this->assertSame(900, $wallet->fresh()->balance_kobo);
+        $this->assertDatabaseHas('wallet_transactions', [
+            'reference' => 'ORDER-' . $order->id,
+            'type' => 'order_payment',
+            'status' => 'completed',
+        ]);
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => $request['action'] === 'add'
+            && $request['service'] == 32748
+            && $request['quantity'] == 200);
+    }
+
+    public function test_non_smm_center_customer_order_keeps_existing_manual_fulfilment_flow(): void
+    {
+        Http::fake();
+        [$customer, $service] = $this->placeFundedCustomerOrder('manual');
+
+        $this->actingAs($customer)
+            ->post(route('orders.store'), [
+                'service_id' => $service->id,
+                'target_url' => 'https://www.instagram.com/example/',
+                'quantity' => 200,
+            ])
+            ->assertRedirect(route('orders.index'))
+            ->assertSessionHas('status');
+
+        $order = Order::query()->where('user_id', $customer->id)->firstOrFail();
+        $this->assertNull($order->provider_order_id);
+        $this->assertNull($order->provider_status);
+        $this->assertSame('pending', $order->status);
+        Http::assertNothingSent();
+    }
+
+    public function test_uncertain_supplier_response_locks_paid_order_for_manual_review(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+        Http::fake(['smm-center.com/api/v2' => Http::response(['error' => 'Temporary supplier error'], 500)]);
+        [$customer, $service] = $this->placeFundedCustomerOrder();
+
+        $this->actingAs($customer)
+            ->post(route('orders.store'), [
+                'service_id' => $service->id,
+                'target_url' => 'https://www.instagram.com/example/',
+                'quantity' => 200,
+            ])
+            ->assertRedirect(route('orders.index'))
+            ->assertSessionHas('status', fn ($message) => str_contains($message, 'manual review'));
+
+        $order = Order::query()->where('user_id', $customer->id)->firstOrFail();
+        $this->assertNull($order->provider_order_id);
+        $this->assertSame('submission_failed_review_required', $order->provider_status);
+        $this->assertSame('pending', $order->status);
+        Http::assertSentCount(1);
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $this->actingAs($admin)
+            ->post(route('admin.orders.submit-to-provider', $order))
+            ->assertRedirect()
+            ->assertSessionHasErrors('provider');
+        Http::assertSentCount(1);
+    }
+
 }

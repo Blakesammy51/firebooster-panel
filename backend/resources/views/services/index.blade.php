@@ -65,7 +65,7 @@
                 <button id="category-picker-trigger" type="button" aria-expanded="false" aria-controls="category-picker-panel" class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3.5 text-left text-sm text-white transition hover:border-violet-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/30">
                     <span class="flex min-w-0 items-center gap-3">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-300" aria-hidden="true">▦</span>
-                        <span class="min-w-0"><span class="block text-[10px] uppercase tracking-wider text-slate-500">Selected category</span><span id="category-picker-label" class="block truncate font-semibold">{{ $selectedCategory !== '' ? $selectedCategory : 'All categories' }}</span></span>
+                        <span class="min-w-0"><span class="block text-[10px] uppercase tracking-wider text-slate-500">Selected category</span><span id="category-picker-label" class="block truncate font-semibold">{{ $selectedCategory !== '' ? $selectedCategory : ($selectedPlatform !== '' ? 'All ' . $selectedPlatform . ' categories' : 'All categories') }}</span></span>
                     </span>
                     <svg id="category-picker-chevron" class="h-5 w-5 shrink-0 text-slate-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
@@ -84,9 +84,9 @@
                         </div>
                     </div>
                     <div id="category-picker-options" class="max-h-64 overflow-y-auto p-2">
-                        <button type="button" data-category-value="" data-category-name="All categories" class="category-picker-option flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition hover:bg-slate-800 {{ $selectedCategory === '' ? 'bg-violet-500/10 text-violet-200' : 'text-slate-200' }}">
+                        <button type="button" data-category-value="" data-category-name="{{ $selectedPlatform !== '' ? 'All ' . $selectedPlatform . ' categories' : 'All categories' }}" class="category-picker-option flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition hover:bg-slate-800 {{ $selectedCategory === '' ? 'bg-violet-500/10 text-violet-200' : 'text-slate-200' }}">
                             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-300" aria-hidden="true">▦</span>
-                            <span class="min-w-0 flex-1"><span class="block font-semibold">All categories</span><span class="block text-xs text-slate-500">Browse every available service</span></span>
+                            <span class="min-w-0 flex-1"><span class="block font-semibold">{{ $selectedPlatform !== '' ? 'All ' . $selectedPlatform . ' categories' : 'All categories' }}</span><span class="block text-xs text-slate-500">{{ $selectedPlatform !== '' ? 'Browse every available ' . $selectedPlatform . ' service' : 'Browse every available service' }}</span></span>
                             @if ($selectedCategory === '')<span class="text-violet-300" aria-label="Selected">✓</span>@endif
                         </button>
                         @foreach ($categories as $category)

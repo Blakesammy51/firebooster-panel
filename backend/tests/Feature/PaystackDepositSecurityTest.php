@@ -49,6 +49,36 @@ class PaystackDepositSecurityTest extends TestCase
         $this->assertFalse($gateway->validWebhookSignature($body . ' ', $header, null));
     }
 
+    public function test_timestamped_webhook_signature_rejects_timestamps_outside_the_five_minute_window(): void
+    {
+        $secret = 'whsec_test_signing_secret';
+        config(['services.paystack.webhook_secret' => $secret]);
+
+        $body = '{"event":"charge.success","data":{"reference":"FB-stale"}}';
+        $gateway = new PaystackGateway();
+
+        foreach ([time() - 301, time() + 301] as $timestamp) {
+            $signature = hash_hmac('sha512', $timestamp . '.' . $body, $secret);
+            $header = 't=' . $timestamp . ',v1=whk_test:' . $signature;
+
+            $this->assertFalse($gateway->validWebhookSignature($body, $header, null));
+        }
+    }
+
+    public function test_timestamped_webhook_signature_accepts_the_five_minute_boundary(): void
+    {
+        $secret = 'whsec_test_signing_secret';
+        config(['services.paystack.webhook_secret' => $secret]);
+
+        $body = '{"event":"charge.success","data":{"reference":"FB-boundary"}}';
+        $gateway = new PaystackGateway();
+        $timestamp = time() - 300;
+        $signature = hash_hmac('sha512', $timestamp . '.' . $body, $secret);
+        $header = 't=' . $timestamp . ',v1=whk_test:' . $signature;
+
+        $this->assertTrue($gateway->validWebhookSignature($body, $header, null));
+    }
+
     public function test_legacy_signature_is_verified_when_no_webhook_signing_secret_is_configured(): void
     {
         $secretKey = 'sk_test_legacy_secret';

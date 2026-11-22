@@ -59,10 +59,8 @@ class ServiceController extends Controller
         $status = $filters['status'] ?? 'all';
 
         $query = Service::query()->latest();
-        if ($status === 'active') {
-            $query->where('is_active', true);
-        } elseif ($status === 'inactive') {
-            $query->where('is_active', false);
+        if ($status !== 'all') {
+            $query->where('is_active', $status === 'active');
         }
         if (!empty($filters['platform'])) {
             $query->where('platform', $filters['platform']);

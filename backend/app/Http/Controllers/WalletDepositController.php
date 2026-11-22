@@ -267,6 +267,12 @@ class WalletDepositController extends Controller
                 return; // Idempotency: a callback and webhook may arrive for the same payment.
             }
 
+            // Failed and abandoned deposits are terminal: a delayed success event
+            // must never reopen them or credit the wallet after checkout was closed.
+            if ($transaction->status !== 'pending') {
+                return;
+            }
+
             $metadata = $data['metadata'] ?? [];
             $valid = ($data['status'] ?? null) === 'success'
                 && ($data['reference'] ?? null) === $transaction->reference

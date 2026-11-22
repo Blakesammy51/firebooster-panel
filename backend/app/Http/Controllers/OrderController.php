@@ -50,7 +50,7 @@ class OrderController extends Controller
                 default => 3,
             };
             $message = match ($status) {
-                'pending' => 'Your payment is recorded. This order is waiting for manual review and has not yet been sent for fulfilment.',
+                'pending' => 'Your payment is recorded. This order is awaiting fulfilment confirmation.',
                 'awaiting_payment' => 'This order is waiting for payment confirmation. It will move forward once payment is verified.',
                 'processing' => 'Your order has been accepted for fulfilment. Progress is shown when an update is available.',
                 'completed' => 'Your order has been marked as completed.',
@@ -142,7 +142,7 @@ class OrderController extends Controller
                     'unit_price' => $service->price_per_1000,
                     'total_price' => number_format($totalKobo / 100, 2, '.', ''),
                     'status' => 'pending',
-                    'notes' => 'Paid from wallet. Awaiting manual review; not submitted to a provider.',
+                    'notes' => 'Paid from wallet. Awaiting fulfilment submission.',
                 ]);
 
                 $lockedWallet->balance_kobo -= $totalKobo;

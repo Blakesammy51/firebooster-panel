@@ -51,5 +51,5 @@
 <button class="rounded-lg border border-violet-500 px-4 py-3">Save order</button></form>
 </div></article>
 @empty<p class="rounded-xl border border-slate-800 bg-slate-900 p-6 text-slate-400">No matching orders found.</p>@endforelse</div>
-<div class="mt-5">{{ $orders->links() }}</div><p class="mt-6 text-xs text-amber-300">Supplier submission is a separate admin action. If a submission cannot be confirmed, check the SMM Center dashboard before retrying. Duplicate submissions are blocked.</p>
+<div class="mt-5">{{ $orders->links() }}</div><p class="mt-6 text-xs text-amber-300">Eligible SMM Center orders are submitted automatically after wallet payment. If supplier acceptance cannot be confirmed, the order is locked for manual review. Check the SMM Center dashboard before taking further action; duplicate submissions are blocked.</p>
 </main></body></html>

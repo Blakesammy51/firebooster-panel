@@ -28,7 +28,7 @@ class CustomerOrderTrackingTest extends TestCase
         ]);
     }
 
-    public function test_customer_sees_manual_review_explanation_for_pending_order(): void
+    public function test_customer_sees_fulfilment_waiting_message_for_pending_order(): void
     {
         $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
         $service = $this->createSupplierService();
@@ -41,7 +41,7 @@ class CustomerOrderTrackingTest extends TestCase
             'unit_price' => '3500.00',
             'total_price' => '35.00',
             'status' => 'pending',
-            'notes' => 'Paid from wallet. Awaiting manual review; not submitted to a provider.',
+            'notes' => 'Paid from wallet. Awaiting fulfilment submission.',
         ]);
 
         $this->actingAs($customer)
@@ -50,7 +50,7 @@ class CustomerOrderTrackingTest extends TestCase
             ->assertSee('Order placed')
             ->assertSee('Review')
             ->assertSee('Processing')
-            ->assertSee('Your payment is recorded. This order is waiting for manual review');
+            ->assertSee('Your payment is recorded. This order is awaiting fulfilment confirmation.');
     }
 
     public function test_customer_sees_supplier_quantity_progress_without_internal_supplier_id(): void

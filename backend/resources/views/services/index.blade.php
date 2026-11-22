@@ -114,12 +114,6 @@
         <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 px-2.5 py-1 text-xs font-medium text-emerald-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Available</span>
     </div>
     <h3 class="mt-3 text-lg font-bold leading-snug">{{ $service->display_name }}</h3>
-    @if ($service->display_speed || $service->display_start_time)
-        <div class="mt-3 flex flex-wrap gap-2 text-xs">
-            @if ($service->display_speed)<span class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-300"><span class="text-slate-500">Speed</span> <strong class="ml-1 text-slate-100">{{ $service->display_speed }}</strong></span>@endif
-            @if ($service->display_start_time)<span class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-300"><span class="text-slate-500">Start time</span> <strong class="ml-1 text-slate-100">{{ $service->display_start_time }}</strong></span>@endif
-        </div>
-    @endif
     @if ($service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.'))
         <p class="mt-2 text-sm leading-relaxed text-slate-400">{{ $service->display_description }}</p>
     @endif
@@ -154,6 +148,8 @@
         data-maximum="{{ $service->maximum_quantity }}"
         data-refill="{{ $service->provider_refill ? 'Yes' : 'No' }}"
         data-cancel="{{ $service->provider_cancel ? 'Yes' : 'No' }}"
+        data-speed="{{ $service->display_speed ?? '' }}"
+        data-start-time="{{ $service->display_start_time ?? '' }}"
         aria-controls="selected-order-panel"
         aria-expanded="false"
     >Select service</button>
@@ -170,6 +166,8 @@
             <h2 id="selected-service-title" class="mt-2 text-xl font-bold">Choose a service above</h2>
             <p id="selected-service-description" class="mt-2 hidden text-sm text-slate-400"></p>
             <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                <span id="selected-service-speed" class="hidden rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-300"></span>
+                <span id="selected-service-start-time" class="hidden rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-300"></span>
                 <span id="selected-service-refill" class="hidden rounded-md bg-slate-800 px-2 py-1 text-slate-300"></span>
                 <span id="selected-service-cancel" class="hidden rounded-md bg-slate-800 px-2 py-1 text-slate-300"></span>
             </div>
@@ -236,6 +234,8 @@
     const serviceDescription = document.getElementById('selected-service-description');
     const refillBadge = document.getElementById('selected-service-refill');
     const cancelBadge = document.getElementById('selected-service-cancel');
+    const speedBadge = document.getElementById('selected-service-speed');
+    const startTimeBadge = document.getElementById('selected-service-start-time');
     const quantity = document.getElementById('selected-quantity');
     const quantityLimits = document.getElementById('selected-quantity-limits');
     const unitPrice = document.getElementById('selected-unit-price');
@@ -312,7 +312,9 @@
             minimum: Number.parseInt(button.dataset.minimum, 10),
             maximum: Number.parseInt(button.dataset.maximum, 10),
             refill: button.dataset.refill === 'Yes',
-            cancel: button.dataset.cancel === 'Yes'
+            cancel: button.dataset.cancel === 'Yes',
+            speed: button.dataset.speed || '',
+            startTime: button.dataset.startTime || ''
         };
 
         if (!Number.isFinite(selectedService.pricePer1000) || selectedService.pricePer1000 <= 0) {
@@ -327,10 +329,14 @@
         serviceTitle.textContent = selectedService.name;
         serviceDescription.textContent = selectedService.description;
         serviceDescription.classList.toggle('hidden', !selectedService.description);
-        refillBadge.textContent = 'Refill available';
-        refillBadge.classList.toggle('hidden', !selectedService.refill);
-        cancelBadge.textContent = 'Cancellation supported';
-        cancelBadge.classList.toggle('hidden', !selectedService.cancel);
+        speedBadge.textContent = selectedService.speed ? '⚡ Speed: ' + selectedService.speed : '';
+        speedBadge.classList.toggle('hidden', !selectedService.speed);
+        startTimeBadge.textContent = selectedService.startTime ? '⏳ Start time: ' + selectedService.startTime : '';
+        startTimeBadge.classList.toggle('hidden', !selectedService.startTime);
+        refillBadge.textContent = selectedService.refill ? '♻️ Refill available' : '❌ No refill';
+        refillBadge.classList.remove('hidden');
+        cancelBadge.textContent = selectedService.cancel ? '✓ Cancellation supported' : '✕ Cancellation not available';
+        cancelBadge.classList.remove('hidden');
         quantity.min = String(selectedService.minimum);
         quantity.max = String(selectedService.maximum);
         quantity.value = String(selectedService.minimum);

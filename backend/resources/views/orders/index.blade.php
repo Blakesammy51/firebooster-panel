@@ -99,5 +99,13 @@
     <p class="mt-6 text-xs text-slate-400">Refunds appear here after they have been credited to your wallet. You can view the full refund transaction in <a href="{{ route('wallet.index') }}" class="text-violet-300 underline">My Wallet</a>.</p>
     <p class="mt-3 text-xs text-amber-300">Orders may require manual review before fulfilment. A supplier status update does not itself issue a wallet refund.</p>
 </main>
+
+<a href="https://t.me/FireboosterSupport" target="_blank" rel="noopener noreferrer"
+   aria-label="Contact Firebooster support on Telegram"
+   class="fixed bottom-6 right-4 z-50 inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-950/40 transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-slate-950">
+    <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="M21.8 4.2 18.6 19c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.3-8.4c.4-.4-.1-.6-.6-.2L6 12.5l-4.9-1.5c-1.1-.3-1.1-1 .2-1.5L20.5 2.7c.9-.3 1.7.2 1.3 1.5Z"/></svg>
+    <span>Telegram Support</span>
+</a>
+
 </body>
 </html>

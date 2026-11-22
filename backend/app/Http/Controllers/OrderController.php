@@ -142,7 +142,7 @@ class OrderController extends Controller
                     'unit_price' => $service->price_per_1000,
                     'total_price' => number_format($totalKobo / 100, 2, '.', ''),
                     'status' => 'pending',
-                    'notes' => 'Paid from wallet. Awaiting manual review; not submitted to a provider.',
+                    'notes' => 'Paid from wallet. Awaiting fulfilment submission.',
                 ]);
 
                 $lockedWallet->balance_kobo -= $totalKobo;

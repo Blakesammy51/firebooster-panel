@@ -35,12 +35,12 @@ class AdminServiceCatalogueFilterTest extends TestCase
             ->get(route('admin.services.index', ['status' => 'inactive']))
             ->assertOk()
             ->assertSee($inactive->name)
-            ->assertDontSee($active->name)
+            ->assertDontSee($active->name);
 
         $this->get(route('admin.services.index', ['status' => 'active']))
             ->assertOk()
             ->assertSee($active->name)
-            ->assertDontSee($inactive->name)
+            ->assertDontSee($inactive->name);
     }
 
     public function test_combined_status_platform_and_category_filters_are_applied_together(): void
@@ -61,7 +61,7 @@ class AdminServiceCatalogueFilterTest extends TestCase
             ->assertSee($match->name)
             ->assertDontSee('Instagram Followers Active')
             ->assertDontSee('TikTok Followers Inactive')
-            ->assertDontSee('Instagram Likes Inactive')
+            ->assertDontSee('Instagram Likes Inactive');
     }
 
     public function test_status_cards_preserve_search_platform_and_category_filters(): void

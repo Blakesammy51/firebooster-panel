@@ -41,7 +41,7 @@ class CustomerOrderTrackingTest extends TestCase
             'unit_price' => '3500.00',
             'total_price' => '35.00',
             'status' => 'pending',
-            'notes' => 'Paid from wallet. Awaiting manual review; not submitted to a provider.',
+            'notes' => 'Paid from wallet. Awaiting fulfilment submission.',
         ]);
 
         $this->actingAs($customer)

@@ -154,6 +154,40 @@ class CustomerOrderTrackingTest extends TestCase
             ->assertDontSee('Service ID:');
     }
 
+    public function test_customer_service_cards_separate_speed_and_start_time_from_clean_service_names(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);
+        Service::query()->create([
+            'name' => 'Facebook Page &amp; Profile Followers (♻️ Refill: 30 Days) (⚡ Speed: Up To 300K/Day) (⌛ Start Time: 0–3 Hours)',
+            'platform' => 'Facebook',
+            'category' => 'Facebook Followers',
+            'provider' => 'smm_center',
+            'provider_service_id' => '987654',
+            'description' => 'Imported from SMM Center. Supplier category: Facebook Followers',
+            'price_per_1000' => '2000.00',
+            'minimum_quantity' => 100,
+            'maximum_quantity' => 300000,
+            'provider_refill' => true,
+            'provider_cancel' => true,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($customer)->get(route('services.index'));
+
+        $response->assertOk()
+            ->assertSee('Facebook Page &amp; Profile Followers')
+            ->assertSee('Speed')
+            ->assertSee('Up To 300K/Day')
+            ->assertSee('Start time')
+            ->assertSee('0–3 Hours')
+            ->assertSee('Refill support')
+            ->assertSee('Cancellation support')
+            ->assertDontSee('Refill: 30 Days')
+            ->assertDontSee('Start Time:')
+            ->assertDontSee('Speed:');
+        $this->assertStringNotContainsString('&amp;amp;', $response->getContent());
+    }
+
     public function test_customer_catalogue_uses_a_category_dropdown_instead_of_category_chips(): void
     {
         $customer = User::factory()->create(['role' => 'customer', 'email_verified_at' => now()]);

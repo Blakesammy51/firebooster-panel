@@ -47,6 +47,26 @@ class SupplierReportController extends Controller
             ->get()
             ->keyBy('reference');
 
+        // Paystack fees occur when wallet deposits are funded, not per order.
+        // Report them separately rather than assigning an estimated order allocation.
+        $paystackDeposits = WalletTransaction::query()
+            ->where('type', 'deposit')
+            ->where('status', 'completed')
+            ->where('currency', 'NGN')
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to)
+            ->get()
+            ->filter(fn (WalletTransaction $transaction) =>
+                (($transaction->metadata['gateway'] ?? null) === 'paystack')
+            );
+
+        $recordedPaystackFees = $paystackDeposits->filter(fn (WalletTransaction $transaction) =>
+            array_key_exists('paystack_fee_kobo', (array) $transaction->metadata)
+        );
+        $paystackFeeTotal = $recordedPaystackFees->sum(fn (WalletTransaction $transaction) =>
+            (int) $transaction->metadata['paystack_fee_kobo']
+        ) / 100;
+
         $rows = $orders->map(function (Order $order) use ($payments, $refunds) {
             $payment = $payments->get('ORDER-'.$order->id);
             $refund = $refunds->get('ORDER-'.$order->id.'-REFUND');
@@ -90,6 +110,10 @@ class SupplierReportController extends Controller
             'totalRefunded' => $paidRows->sum('refund'),
             'netSales' => $paidRows->sum('net_sale'),
             'totalMargin' => $marginRows->sum('margin'),
+            'paystackFeeTotal' => $paystackFeeTotal,
+            'paystackFeeCount' => $recordedPaystackFees->count(),
+            'paystackFeeMissingCount' => $paystackDeposits->count() - $recordedPaystackFees->count(),
+            'marginAfterPaystackFees' => $marginRows->sum('margin') - $paystackFeeTotal,
             'marginOrders' => $marginRows->count(),
             'unpricedOrders' => $rows->filter(fn ($row) => $row['charge'] === null)->count(),
             'unconvertedUsdOrders' => $rows->filter(fn ($row) => $row['charge'] !== null && $row['currency'] === 'USD' && $row['cost_ngn'] === null)->count(),

@@ -12,6 +12,8 @@
     <nav class="flex gap-4 text-sm"><a class="text-violet-300 underline" href="{{ route('wallet.index') }}">My wallet</a><a class="text-violet-300 underline" href="{{ route('orders.index') }}">My orders</a></nav>
 </header>
 
+@include('components.community-links')
+
 @if (session('status'))<p class="mb-5 rounded-lg bg-emerald-950 p-4 text-emerald-200">{{ session('status') }}</p>@endif
 @if ($errors->any())<div class="mb-5 rounded-lg bg-red-950 p-4 text-red-200">@foreach ($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 

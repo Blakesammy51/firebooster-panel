@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class SupplierOrderRefundTest extends TestCase
@@ -60,15 +61,15 @@ class SupplierOrderRefundTest extends TestCase
         $order = $this->makeRefundableOrder();
 
         $this->actingAs($admin)
-            ->post(route('admin.orders.refund', $order), ['refund_amount' => '0.40'])
+            ->post(route('admin.orders.refund', $order), ['refund_amount' => '0.20'])
             ->assertRedirect()
             ->assertSessionHas('status');
 
-        $this->assertDatabaseHas('wallets', ['user_id' => $order->user_id, 'balance_kobo' => 540]);
+        $this->assertDatabaseHas('wallets', ['user_id' => $order->user_id, 'balance_kobo' => 520]);
         $this->assertDatabaseHas('wallet_transactions', [
             'reference' => 'ORDER-' . $order->id . '-REFUND',
             'type' => 'order_refund',
-            'amount_kobo' => 40,
+            'amount_kobo' => 20,
             'currency' => 'NGN',
             'status' => 'completed',
         ]);
@@ -78,17 +79,17 @@ class SupplierOrderRefundTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasErrors('provider');
 
-        $this->assertDatabaseHas('wallets', ['user_id' => $order->user_id, 'balance_kobo' => 540]);
+        $this->assertDatabaseHas('wallets', ['user_id' => $order->user_id, 'balance_kobo' => 520]);
         $this->assertDatabaseCount('wallet_transactions', 2);
     }
 
-    public function test_partial_refund_cannot_exceed_original_payment(): void
+    public function test_partial_refund_cannot_exceed_proportional_value_of_undelivered_quantity(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
         $order = $this->makeRefundableOrder();
 
         $this->actingAs($admin)
-            ->post(route('admin.orders.refund', $order), ['refund_amount' => '1.01'])
+            ->post(route('admin.orders.refund', $order), ['refund_amount' => '0.21'])
             ->assertRedirect()
             ->assertSessionHasErrors('provider');
 
@@ -125,6 +126,44 @@ class SupplierOrderRefundTest extends TestCase
             'amount_kobo' => 100,
             'type' => 'order_refund',
         ]);
+    }
+
+
+    public function test_supplier_refresh_cannot_reopen_an_order_after_refund(): void
+    {
+        config([
+            'services.smm_center.api_key' => 'test-provider-key',
+            'services.smm_center.base_url' => 'https://smm-center.com',
+        ]);
+
+        $admin = User::factory()->create(['role' => 'admin', 'email_verified_at' => now()]);
+        $order = $this->makeRefundableOrder('partial', 'Partial', 40);
+        $wallet = Wallet::query()->where('user_id', $order->user_id)->firstOrFail();
+
+        WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $order->user_id,
+            'type' => 'order_refund',
+            'amount_kobo' => 20,
+            'currency' => 'NGN',
+            'status' => 'completed',
+            'reference' => 'ORDER-' . $order->id . '-REFUND',
+            'description' => 'Wallet refund for order #' . $order->id,
+        ]);
+
+        Http::fake();
+
+        $this->actingAs($admin)
+            ->post(route('admin.orders.refresh-provider-status', $order))
+            ->assertRedirect()
+            ->assertSessionHasErrors('provider');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'partial',
+            'provider_status' => 'Partial',
+        ]);
+        Http::assertNothingSent();
     }
 
     public function test_customers_cannot_issue_order_refunds(): void

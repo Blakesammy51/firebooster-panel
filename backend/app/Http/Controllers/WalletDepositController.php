@@ -263,16 +263,7 @@ class WalletDepositController extends Controller
         DB::transaction(function () use ($data, $transactionId) {
             $transaction = WalletTransaction::query()->lockForUpdate()->findOrFail($transactionId);
 
-            if ($transaction->status === 'completed') {
-                return; // Idempotency: a callback and webhook may arrive for the same payment.
-            }
-
-            // Failed and abandoned deposits are terminal: a delayed success event
-            // must never reopen them or credit the wallet after checkout was closed.
-            if ($transaction->status !== 'pending') {
-                return;
-            }
-
+            // Validate gateway details before crediting or enriching fee metadata.
             $metadata = $data['metadata'] ?? [];
             $valid = ($data['status'] ?? null) === 'success'
                 && ($data['reference'] ?? null) === $transaction->reference
@@ -285,6 +276,29 @@ class WalletDepositController extends Controller
                 throw new \RuntimeException('Paystack transaction details did not match the pending wallet deposit.');
             }
 
+            $feeKobo = $data['fees'] ?? null;
+            $hasFee = (is_int($feeKobo) || (is_string($feeKobo) && ctype_digit($feeKobo)))
+                && (int) $feeKobo >= 0;
+
+            if ($transaction->status === 'completed') {
+                // Callback and webhook can arrive in either order. Record a fee
+                // if the first verified event omitted it, without crediting twice.
+                $existingMetadata = (array) $transaction->metadata;
+                if ($hasFee && !array_key_exists('paystack_fee_kobo', $existingMetadata)) {
+                    $existingMetadata['paystack_fee_kobo'] = (int) $feeKobo;
+                    $existingMetadata['paystack_fee_recorded_at'] = now()->toISOString();
+                    $transaction->update(['metadata' => $existingMetadata]);
+                }
+
+                return;
+            }
+
+            // Failed and abandoned deposits are terminal: a delayed success event
+            // must never reopen them or credit the wallet after checkout was closed.
+            if ($transaction->status !== 'pending') {
+                return;
+            }
+
             $wallet = Wallet::query()->lockForUpdate()->findOrFail($transaction->wallet_id);
             $wallet->balance_kobo = $wallet->balance_kobo + $transaction->amount_kobo;
             $wallet->save();
@@ -295,6 +309,10 @@ class WalletDepositController extends Controller
                     'gateway' => 'paystack',
                     'paystack_transaction_id' => $data['id'] ?? null,
                     'paid_at' => now()->toISOString(),
+                    ...($hasFee ? [
+                        'paystack_fee_kobo' => (int) $feeKobo,
+                        'paystack_fee_recorded_at' => now()->toISOString(),
+                    ] : []),
                 ]),
             ]);
         });

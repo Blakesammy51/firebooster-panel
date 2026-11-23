@@ -133,6 +133,15 @@ class OrderController extends Controller
             return back()->withErrors(['provider' => 'This order is not linked to SMM Center.']);
         }
 
+        $refundReference = 'ORDER-' . $order->id . '-REFUND';
+        if (WalletTransaction::query()
+            ->where('reference', $refundReference)
+            ->where('type', 'order_refund')
+            ->where('status', 'completed')
+            ->exists()) {
+            return back()->withErrors(['provider' => 'This order has already been refunded. Supplier refresh cannot reopen its status.']);
+        }
+
         try {
             $data = $client->orderStatus((int) $order->provider_order_id);
             $providerStatus = trim((string) $data['status']);
@@ -165,7 +174,21 @@ class OrderController extends Controller
                 $updates['status'] = 'processing';
             }
 
-            $order->update($updates);
+            // Recheck atomically in case a refund was issued during the supplier request.
+            $updated = Order::query()
+                ->whereKey($order->id)
+                ->whereNotExists(function ($query) use ($refundReference) {
+                    $query->selectRaw('1')
+                        ->from('wallet_transactions')
+                        ->where('reference', $refundReference)
+                        ->where('type', 'order_refund')
+                        ->where('status', 'completed');
+                })
+                ->update($updates);
+
+            if ($updated !== 1) {
+                return back()->withErrors(['provider' => 'This order has already been refunded. Supplier refresh cannot reopen its status.']);
+            }
 
             return back()->with('status', 'Supplier status refreshed for order #' . $order->id . ': ' . $providerStatus);
         } catch (Throwable $exception) {
@@ -224,9 +247,16 @@ class OrderController extends Controller
                     }
                     $refundKobo = (int) $payment->amount_kobo;
                 } else {
+                    $maximumRefundKobo = intdiv(
+                        (int) $payment->amount_kobo * (int) $lockedOrder->provider_remains,
+                        (int) $lockedOrder->quantity
+                    );
                     $refundKobo = (int) round(((float) $data['refund_amount']) * 100);
-                    if ($refundKobo < 1 || $refundKobo > (int) $payment->amount_kobo) {
-                        throw new \RuntimeException('The partial refund must be positive and cannot exceed the original amount paid.');
+                    if ($refundKobo < 1 || $maximumRefundKobo < 1 || $refundKobo > $maximumRefundKobo) {
+                        throw new \\RuntimeException(
+                            'The partial refund cannot exceed the proportional value of the confirmed undelivered quantity (NGN '
+                            . number_format($maximumRefundKobo / 100, 2) . ').'
+                        );
                     }
                 }
 

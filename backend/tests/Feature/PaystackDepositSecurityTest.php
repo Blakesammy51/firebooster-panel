@@ -401,9 +401,12 @@ class PaystackDepositSecurityTest extends TestCase
             ->get(route('wallet.deposit.callback', ['reference' => $transaction->reference]))
             ->assertRedirect(route('wallet.index'));
 
+        // The callback credited the wallet without fee details; a later
+        // signed webhook enriches the record without issuing a second credit.
+        $webhookPayment = array_merge($verifiedPayment, ['fees' => 150]);
         $webhookBody = json_encode([
             'event' => 'charge.success',
-            'data' => $verifiedPayment,
+            'data' => $webhookPayment,
         ], JSON_THROW_ON_ERROR);
 
         $this->sendSignedWebhook($webhookBody)->assertOk();
@@ -416,6 +419,7 @@ class PaystackDepositSecurityTest extends TestCase
             'id' => $transaction->id,
             'status' => 'completed',
         ]);
+        $this->assertSame(150, WalletTransaction::query()->findOrFail($transaction->id)->metadata['paystack_fee_kobo']);
     }
 
     public function test_invalid_webhook_signature_never_credits_a_pending_deposit(): void

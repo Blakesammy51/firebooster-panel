@@ -60,6 +60,21 @@ class SupplierReportTest extends TestCase
             'description' => 'Wallet payment',
         ]);
 
+        WalletTransaction::query()->create([
+            'wallet_id' => $wallet->id,
+            'user_id' => $customer->id,
+            'type' => 'deposit',
+            'amount_kobo' => 10000,
+            'currency' => 'NGN',
+            'status' => 'completed',
+            'reference' => 'FB-report-fee',
+            'description' => 'Wallet deposit via Paystack',
+            'metadata' => [
+                'gateway' => 'paystack',
+                'paystack_fee_kobo' => 150,
+            ],
+        ]);
+
         $this->actingAs($admin)
             ->get(route('admin.reports.supplier', [
                 'from' => now()->toDateString(),
@@ -69,6 +84,9 @@ class SupplierReportTest extends TestCase
             ->assertSee('Supplier spending & order profit', false)
             ->assertSee('USD 0.020000')
             ->assertSee('₦5.00')
+            ->assertSee('₦1.50')
+            ->assertSee('₦3.50')
+            ->assertSee('1 deposits have a recorded Paystack fee')
             ->assertSee('Verified funding receipt');
     }
 

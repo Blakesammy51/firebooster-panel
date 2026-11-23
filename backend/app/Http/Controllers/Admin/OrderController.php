@@ -253,7 +253,7 @@ class OrderController extends Controller
                     );
                     $refundKobo = (int) round(((float) $data['refund_amount']) * 100);
                     if ($refundKobo < 1 || $maximumRefundKobo < 1 || $refundKobo > $maximumRefundKobo) {
-                        throw new \\RuntimeException(
+                        throw new \RuntimeException(
                             'The partial refund cannot exceed the proportional value of the confirmed undelivered quantity (NGN '
                             . number_format($maximumRefundKobo / 100, 2) . ').'
                         );

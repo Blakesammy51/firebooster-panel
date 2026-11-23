@@ -1,14 +1,14 @@
 <?php
-use App\\Http\\Controllers\\Admin\\DashboardController;
-use App\\Http\\Controllers\\Admin\\OrderController as AdminOrderController;
-use App\\Http\\Controllers\\Admin\\ServiceController as AdminServiceController;
-use App\\Http\\Controllers\\Admin\\SupplierReportController;
-use App\\Http\\Controllers\\Admin\\UserController as AdminUserController;
-use App\\Http\\Controllers\\OrderController;
-use App\\Http\\Controllers\\ServiceController;
-use App\\Http\\Controllers\\WalletController;
-use App\\Http\\Controllers\\WalletDepositController;
-use Illuminate\\Support\\Facades\\Route;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\SupplierReportController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\WalletDepositController;
+use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 require __DIR__.'/auth.php';
@@ -33,7 +33,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'admin']
     Route::get('/reports/supplier', [SupplierReportController::class, 'index'])->name('reports.supplier');
     Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
     Route::post('/services/smm-center/sync', [AdminServiceController::class, 'syncSmmCenter'])->name('services.smm-center.sync');
-    Route::post('/services', [AdminServiceController::class, 'store'])->name('admin.services.store');
+    Route::post('/services', [AdminServiceController::class, 'store'])->name('services.store');
     Route::put('/services/{service}', [AdminServiceController::class, 'update'])->name('services.update');
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::post('/orders/{order}/submit-to-provider', [AdminOrderController::class, 'submitToProvider'])->name('orders.submit-to-provider');

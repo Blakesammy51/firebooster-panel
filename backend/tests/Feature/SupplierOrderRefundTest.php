@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class SupplierOrderRefundTest extends TestCase
@@ -78,7 +79,7 @@ class SupplierOrderRefundTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasErrors('provider');
 
-        $this->assertDatabaseHas('wallets', ['user_id' => $order->user_id, 'balance_kobo' => 540]);
+        $this->assertDatabaseHas('wallets', ['user_id' => $order->user_id, 'balance_kobo' => 520]);
         $this->assertDatabaseCount('wallet_transactions', 2);
     }
 

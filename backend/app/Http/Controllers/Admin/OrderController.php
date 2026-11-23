@@ -248,7 +248,10 @@ class OrderController extends Controller
                     $refundKobo = (int) $payment->amount_kobo;
                 } else {
                     $maximumRefundKobo = intdiv(
-                        (int) $payment->amount_kobo * (int) $lockedOrder->provider_remains,
+                        (int) $payment->amount_kobo * min(
+                            (int) $lockedOrder->quantity,
+                            max(0, (int) $lockedOrder->provider_remains)
+                        ),
                         (int) $lockedOrder->quantity
                     );
                     $refundKobo = (int) round(((float) $data['refund_amount']) * 100);

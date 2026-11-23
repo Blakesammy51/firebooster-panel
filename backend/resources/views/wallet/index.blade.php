@@ -15,6 +15,8 @@
 </nav>
 </div>
 
+@include('components.community-links')
+
 <h1 class="mt-6 text-3xl font-bold">My Wallet</h1>
 <p class="mt-2 text-sm text-slate-400">Manage your balance and keep track of every wallet transaction.</p>
 

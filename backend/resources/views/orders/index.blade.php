@@ -7,6 +7,7 @@
         <a href="{{ route('services.index') }}" class="text-violet-300 underline">← Browse services</a>
         <a href="{{ route('wallet.index') }}" class="text-violet-300 underline">My wallet</a>
     </div>
+    @include('components.community-links')
     <h1 class="my-6 text-3xl font-bold">My orders</h1>
 
     @if (session('status'))<p class="mb-5 rounded-lg bg-emerald-950 p-4 text-emerald-200">{{ session('status') }}</p>@endif

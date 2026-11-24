@@ -6,7 +6,7 @@
 @vite(['resources/css/app.css','resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-slate-950 text-white">
-<main class="mx-auto max-w-5xl px-4 py-7 sm:px-5 sm:py-10">
+<main class="mx-auto max-w-5xl px-4 py-6 pb-28 sm:px-6 sm:py-10 sm:pb-12">
 <div class="flex flex-wrap items-center justify-between gap-3">
 <a href="{{ route('dashboard') }}" class="text-sm text-violet-300 hover:text-violet-200">← Back to dashboard</a>
 <nav class="flex gap-4 text-sm text-slate-300">
@@ -17,8 +17,7 @@
 
 @include('components.community-links')
 
-<h1 class="mt-6 text-3xl font-bold">My Wallet</h1>
-<p class="mt-2 text-sm text-slate-400">Manage your balance and keep track of every wallet transaction.</p>
+<section class="relative mt-6 overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-950/80 via-slate-900/95 to-fuchsia-950/40 p-6 shadow-2xl shadow-violet-950/20 sm:p-8"><div class="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-fuchsia-500/10 blur-3xl" aria-hidden="true"></div><div class="relative"><p class="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">Your Firebooster funds</p><h1 class="mt-2 text-3xl font-extrabold text-white sm:text-4xl">My Wallet</h1><p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">Manage your balance, add funds securely and keep track of every wallet transaction.</p></div></section>
 
 @if (session('status'))
 <p class="mt-5 rounded-xl border border-emerald-800 bg-emerald-950/30 p-4 text-sm text-emerald-200">{{ session('status') }}</p>
@@ -29,13 +28,13 @@
 </div>
 @endif
 
-<section class="mt-7 rounded-2xl border border-violet-700/50 bg-gradient-to-br from-violet-950/70 to-slate-900 p-6 sm:p-8">
-<p class="text-sm font-medium text-violet-200">Available balance</p>
+<section class="relative mt-6 overflow-hidden rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-950/80 via-purple-950/50 to-slate-900 p-6 shadow-xl shadow-violet-950/20 sm:p-8">
+<div class="flex items-center justify-between gap-3"><p class="text-sm font-semibold text-violet-200">Available balance</p><span class="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">Ready to use</span></div>
 <p class="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">₦{{ number_format($wallet->balance_kobo / 100, 2) }}</p>
 <p class="mt-3 max-w-xl text-sm leading-6 text-slate-300">This is the amount currently available to pay for services. Deposits are added only after Paystack confirms payment on the server.</p>
 </section>
 
-<section class="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6">
+<section class="mt-5 rounded-2xl border border-violet-300/15 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/20 sm:p-6">
 <div class="flex flex-wrap items-start justify-between gap-2">
 <div>
 <h2 class="text-xl font-semibold">Add funds</h2>
@@ -48,7 +47,7 @@
 <label class="flex-1 text-sm text-slate-300">Amount (NGN)
 <input name="amount" type="number" inputmode="decimal" min="100" max="1000000" step="0.01" required value="{{ old('amount') }}" placeholder="e.g. 2000" class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-600 focus:border-violet-500 focus:outline-none">
 </label>
-<button type="submit" class="rounded-lg bg-violet-600 px-6 py-3 font-semibold text-white transition hover:bg-violet-500">Continue to Paystack</button>
+<button type="submit" class="rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-fuchsia-300">Continue to Paystack</button>
 </form>
 <p class="mt-3 text-xs text-slate-500">Minimum ₦100.00 · Maximum ₦1,000,000.00 per deposit.</p>
 </section>
@@ -86,7 +85,7 @@
         default => 'border-slate-700 bg-slate-800 text-slate-300',
     };
 @endphp
-<article class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+<article class="rounded-xl border border-violet-300/15 bg-slate-950/60 p-4 transition hover:border-violet-300/30">
 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 <div class="min-w-0">
 <div class="flex flex-wrap items-center gap-2">
@@ -119,7 +118,7 @@
 
 <a href="https://t.me/FireboosterSupport" target="_blank" rel="noopener noreferrer"
    aria-label="Contact Firebooster support on Telegram"
-   class="fixed bottom-6 right-4 z-50 inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-950/40 transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-slate-950">
+   class="fixed bottom-6 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/25 bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-950/50 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-fuchsia-300 focus:ring-offset-2 focus:ring-offset-slate-950">
     <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="M21.8 4.2 18.6 19c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.3-8.4c.4-.4-.1-.6-.6-.2L6 12.5l-4.9-1.5c-1.1-.3-1.1-1 .2-1.5L20.5 2.7c.9-.3 1.7.2 1.3 1.5Z"/></svg>
     <span>Telegram Support</span>
 </a>

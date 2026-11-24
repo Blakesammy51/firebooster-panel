@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Supplier spending & profit · Firebooster</title>@vite(['resources/css/app.css','resources/js/app.js'])</head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
+<body class="admin-page min-h-screen bg-slate-950 text-slate-100">
+@include('components.admin-navigation')
 <main class="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
 <a href="{{ route('admin.dashboard') }}" class="text-violet-300 underline">← Admin dashboard</a>
 <header class="my-6"><p class="text-xs font-semibold uppercase tracking-wider text-violet-300">Financial overview</p><h1 class="mt-2 text-2xl font-bold sm:text-3xl">Supplier spending & order profit</h1><p class="mt-2 text-sm text-slate-400">SMM Center orders, plus Paystack wallet-deposit fees recorded during the selected period. Fees are shown separately because deposits fund the wallet and are not attributable to individual orders.</p></header>

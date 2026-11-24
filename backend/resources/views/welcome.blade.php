@@ -36,7 +36,6 @@
 <div class="mt-8 grid grid-cols-2 gap-4">
 <div class="rounded-2xl bg-slate-950/70 p-5"><div class="text-3xl">📣</div><h2 class="mt-3 font-bold">Campaigns</h2><p class="mt-1 text-sm text-slate-400">Keep requests in one place.</p></div>
 <div class="rounded-2xl bg-slate-950/70 p-5"><div class="text-3xl">🧩</div><h2 class="mt-3 font-bold">Services</h2><p class="mt-1 text-sm text-slate-400">Explore available options.</p></div>
-<div class="col-span-2 rounded-2xl border border-amber-500/20 bg-amber-950/30 p-5 text-sm leading-6 text-amber-100">Staging preview: orders are requests only. Payments and provider fulfilment are not enabled yet.</div>
 </div>
 </section>
 </main>

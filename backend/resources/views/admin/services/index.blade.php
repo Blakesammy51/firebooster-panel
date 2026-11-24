@@ -6,7 +6,8 @@
     <title>Manage services · Firebooster</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
+<body class="admin-page min-h-screen bg-slate-950 text-slate-100">
+@include('components.admin-navigation')
 <main class="mx-auto max-w-6xl px-5 py-10">
     <a href="{{ route('admin.dashboard') }}" class="text-violet-300 underline">← Admin dashboard</a>
     <h1 class="my-6 text-3xl font-bold">Service catalogue</h1>

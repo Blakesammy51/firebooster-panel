@@ -6,7 +6,8 @@
     <title>Admin dashboard · Firebooster</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
+<body class="admin-page min-h-screen bg-slate-950 text-slate-100">
+@include('components.admin-navigation')
 <main class="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
     <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -14,10 +15,7 @@
             <h1 class="mt-2 text-3xl font-bold">Admin dashboard</h1>
             <p class="mt-2 break-all text-sm text-slate-400">Signed in as {{ auth()->user()->email }}</p>
         </div>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button class="rounded-lg border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800">Sign out</button>
-        </form>
+        <span class="rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200">Administrator</span>
     </header>
 
     <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4" aria-label="Workspace statistics">

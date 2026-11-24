@@ -2,3 +2,104 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 @source '../../app/**/*.php';
+
+/*
+|--------------------------------------------------------------------------
+| Firebooster visual system
+|--------------------------------------------------------------------------
+| Shared visual foundations for customer and admin pages. Keep this layer
+| presentational only: payment, wallet, order and supplier behaviour stays
+| in the existing application components and controllers.
+*/
+:root {
+    color-scheme: dark;
+    --fb-night: #050617;
+    --fb-panel: rgba(11, 13, 34, 0.9);
+    --fb-panel-raised: rgba(16, 17, 43, 0.94);
+    --fb-border: rgba(167, 139, 250, 0.2);
+    --fb-violet: #8b5cf6;
+    --fb-magenta: #d946ef;
+    --fb-text-muted: #a8a9c2;
+}
+
+html {
+    background: var(--fb-night);
+}
+
+body.min-h-screen {
+    background-color: var(--fb-night) !important;
+    background-image:
+        linear-gradient(135deg, rgba(5, 6, 23, 0.94), rgba(5, 6, 23, 0.97)),
+        url('/images/firebooster-banner.png') !important;
+    background-position: center, center;
+    background-size: cover, cover;
+    background-attachment: fixed, fixed;
+    color: #f8f7ff;
+}
+
+/* Shared surfaces: subtle translucency lets the brand artwork breathe. */
+.bg-slate-900 {
+    background-color: var(--fb-panel) !important;
+}
+
+.bg-slate-950 {
+    background-color: rgba(5, 6, 23, 0.92) !important;
+}
+
+.border-slate-800,
+.border-slate-700 {
+    border-color: var(--fb-border) !important;
+}
+
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl {
+    box-shadow: 0 12px 36px rgba(3, 3, 18, 0.16);
+}
+
+/* Primary actions use the same violet-to-magenta treatment as the homepage. */
+button.bg-violet-600,
+a.bg-violet-600,
+input.bg-violet-600 {
+    background-image: linear-gradient(105deg, #702cf4 0%, #a52af4 55%, #d414d9 100%) !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(216, 180, 254, 0.18);
+    box-shadow: 0 8px 24px rgba(126, 34, 206, 0.2);
+}
+
+button.bg-violet-600:hover,
+a.bg-violet-600:hover {
+    filter: brightness(1.1);
+}
+
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+    color: #f8f7ff;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #777991;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline-color: rgba(192, 132, 252, 0.7);
+}
+
+a {
+    text-underline-offset: 3px;
+}
+
+::selection {
+    color: white;
+    background: rgba(168, 85, 247, 0.55);
+}
+
+@media (max-width: 640px) {
+    body.min-h-screen {
+        background-attachment: scroll, scroll;
+    }
+}

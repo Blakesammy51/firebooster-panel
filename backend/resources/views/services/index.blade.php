@@ -110,21 +110,21 @@
 <div class="mb-4 flex items-center justify-between gap-3"><h2 class="text-lg font-semibold">{{ $selectedPlatform !== '' ? $selectedPlatform : 'All services' }}</h2><span class="text-xs text-slate-400">{{ $services->total() }} available</span></div>
 <div class="grid gap-4 md:grid-cols-2">
 @forelse ($services as $service)
-<article class="flex h-full flex-col rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-violet-500/60 hover:shadow-xl hover:shadow-violet-950/20">
+<article class="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-violet-400/15 bg-gradient-to-br from-violet-950/35 via-slate-900/95 to-slate-950/95 p-5 shadow-lg shadow-black/20 transition duration-200 hover:-translate-y-0.5 hover:border-fuchsia-400/40 hover:shadow-xl hover:shadow-violet-950/30">
     <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="text-xs font-semibold uppercase tracking-wider text-violet-300">{{ $platformMap[$service->platform] ?? $service->platform }}@if($service->category) · {{ $service->category }}@endif</p>
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 px-2.5 py-1 text-xs font-medium text-emerald-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Available</span>
+        <p class="text-xs font-semibold uppercase tracking-wider text-violet-200">{{ $platformMap[$service->platform] ?? $service->platform }}@if($service->category) · {{ $service->category }}@endif</p>
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-xs font-medium text-emerald-200"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Available</span>
     </div>
-    <h3 class="mt-3 text-lg font-bold leading-snug">{{ $service->display_name }}</h3>
+    <h3 class="mt-3 text-lg font-bold leading-snug tracking-tight text-white">{{ $service->display_name }}</h3>
     @if ($service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.'))
         <p class="mt-2 text-sm leading-relaxed text-slate-400">{{ $service->display_description }}</p>
     @endif
-    <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+    <div class="mt-4 rounded-xl border border-violet-400/15 bg-slate-950/70 p-3">
         <p class="text-xs text-slate-400">Price per 1,000</p>
         <p class="mt-1 text-xl font-bold text-emerald-300">₦{{ number_format((float) $service->price_per_1000, 2) }}</p>
     </div>
     <div class="mt-3 grid grid-cols-2 gap-2">
-        <div class="rounded-lg bg-slate-800/70 px-3 py-2.5">
+        <div class="rounded-lg border border-white/5 bg-white/[0.035] px-3 py-2.5">
             <p class="text-[11px] uppercase tracking-wide text-slate-400">Minimum order</p>
             <p class="mt-1 text-sm font-semibold text-slate-100">{{ number_format($service->minimum_quantity) }}</p>
         </div>
@@ -141,7 +141,7 @@
     @endif
     <button
         type="button"
-        class="select-service-button mt-5 w-full rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-300"
+        class="select-service-button mt-5 w-full rounded-xl border border-fuchsia-300/20 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 px-4 py-3 font-semibold text-white shadow-lg shadow-violet-950/30 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-fuchsia-300"
         data-service-id="{{ $service->id }}"
         data-service-name="{{ $service->display_name }}"
         data-service-description="{{ $service->description && !str_starts_with((string) $service->description, 'Imported from SMM Center.') ? $service->display_description : '' }}"
@@ -223,7 +223,7 @@
 @endif
 
 <div class="mt-6">{{ $services->links() }}</div>
-<p class="mt-8 text-xs text-amber-300">Orders are paid from your wallet and placed in the manual review queue. They are not automatically sent to a provider yet.</p>
+<p class="mt-8 text-center text-xs text-slate-400">Orders are paid from your wallet and automatically submitted for provider processing.</p>
 </main>
 <script>
 (() => {
@@ -469,7 +469,7 @@
 
 <a href="https://t.me/FireboosterSupport" target="_blank" rel="noopener noreferrer"
    aria-label="Contact Firebooster support on Telegram"
-   class="fixed bottom-40 right-4 z-50 inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-950/40 transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-slate-950">
+   class="fixed bottom-40 right-4 z-50 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/25 bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-950/50 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-fuchsia-300 focus:ring-offset-2 focus:ring-offset-slate-950">
     <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true"><path d="M21.8 4.2 18.6 19c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.3-8.4c.4-.4-.1-.6-.6-.2L6 12.5l-4.9-1.5c-1.1-.3-1.1-1 .2-1.5L20.5 2.7c.9-.3 1.7.2 1.3 1.5Z"/></svg>
     <span>Telegram Support</span>
 </a>

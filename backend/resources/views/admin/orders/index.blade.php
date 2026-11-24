@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Manage orders · Firebooster</title>@vite(['resources/css/app.css','resources/js/app.js'])</head>
-<body class="min-h-screen bg-slate-950 text-slate-100"><main class="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-10">
+<body class="admin-page min-h-screen bg-slate-950 text-slate-100">
+@include('components.admin-navigation')<main class="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-10">
 <a href="{{ route('admin.dashboard') }}" class="text-violet-300 underline">← Admin dashboard</a>
 <div class="my-5 flex flex-wrap items-end justify-between gap-3"><div><h1 class="text-2xl font-bold sm:text-3xl">Order management</h1><p class="mt-1 text-sm text-slate-400">Review payments, supplier fulfilment and refunds.</p></div><span class="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">{{ $orders->total() }} matching orders</span></div>
 @if (session('status'))<p class="mb-4 rounded-lg bg-emerald-950 p-4 text-emerald-200">{{ session('status') }}</p>@endif
